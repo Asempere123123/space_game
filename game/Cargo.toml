@@ -1,0 +1,18 @@
+[package]
+name = "game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+bevy-inspector-egui = "0.27.0"
+bincode = { workspace = true }
+crossbeam-channel = { workspace = true }
+orbits = { path = "../orbits"}
+serde = { workspace = true }
+tokio = { workspace = true }
+
+[features]
+server = []
+client = []
+default = ["server", "client"]
