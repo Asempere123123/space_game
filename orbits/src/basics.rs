@@ -1,6 +1,6 @@
 use crate::{Frame, Orbit, Parent, G};
 
-use std::f64::consts::{PI, E};
+use std::f64::consts::PI;
 
 const ECCENTRIC_ANOMALY_TOLERANCE: f64 = 1e-6;
 const ECCENTRIC_ANOMALY_MAX_ITERATIONS: u32 = 100;
@@ -8,9 +8,9 @@ const ECCENTRIC_ANOMALY_MAX_ITERATIONS: u32 = 100;
 impl Orbit {
     pub fn new_free(x: f64, y: f64, z: f64, vx: f64, vy: f64, vz: f64, parent: Parent) -> Self {
         Self {
-            x: Some(x),
-            y: Some(y),
-            z: Some(z),
+            x,
+            y,
+            z,
             vx: Some(vx),
             vy: Some(vy),
             vz: Some(vz),
@@ -27,10 +27,10 @@ impl Orbit {
     }
 
     pub fn new_orbit(semimajor_axis: f64, eccentricity: f64, parent: Parent) -> Self {
-        Self {
-            x: None,
-            y: None,
-            z: None,
+        let mut orbit = Self {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
             vx: None,
             vy: None,
             vz: None,
@@ -43,7 +43,10 @@ impl Orbit {
             current_mean_anomaly: 0.0,
             frame: Frame::Orbit,
             parent: parent,
-        }
+        };
+
+        orbit.step(0.0);
+        orbit
     }
 
     /// Moves the body according to the elapsed time
@@ -56,26 +59,46 @@ impl Orbit {
 
     fn step_orbit(&mut self, seconds: f64) {
         // https://es.wikipedia.org/wiki/Anomalía_media
-        self.current_mean_anomaly += self.mean_movement.expect("Selected orbit mode should have mean movement defined") * seconds;
-        if self.current_mean_anomaly > 2.0 * PI {
-            self.current_mean_anomaly -= 2.0 * PI;
-        }
+        self.current_mean_anomaly = (self.current_mean_anomaly
+            + self
+                .mean_movement
+                .expect("Selected orbit mode should have mean movement defined")
+                * seconds)
+            % (2.0 * PI);
 
         // https://es.wikipedia.org/wiki/Anomalía_excéntrica
-        let eccentricity = self.eccentricity.expect("Selected orbit mode should have eccentricity defined");
+        let eccentricity = self
+            .eccentricity
+            .expect("Selected orbit mode should have eccentricity defined");
         let kepler_equation = kepler_equation_zeroed(self.current_mean_anomaly, eccentricity);
         let kepler_equation_derivative = kepler_equation_zeroed_derivative(eccentricity);
-        let eccentric_anomaly = crate::solver::solve_newton_raphson(kepler_equation, kepler_equation_derivative, self.current_mean_anomaly, ECCENTRIC_ANOMALY_TOLERANCE, ECCENTRIC_ANOMALY_MAX_ITERATIONS);
+        let eccentric_anomaly = crate::solver::solve_newton_raphson(
+            kepler_equation,
+            kepler_equation_derivative,
+            self.current_mean_anomaly,
+            ECCENTRIC_ANOMALY_TOLERANCE,
+            ECCENTRIC_ANOMALY_MAX_ITERATIONS,
+        );
 
         // https://es.wikipedia.org/wiki/Anomalía_verdadera
-        let constant = ((1.0+E)/(1.0-E)).sqrt();
+        let constant = ((1.0 + eccentricity) / (1.0 - eccentricity)).sqrt();
         let true_anomaly = (constant * (eccentric_anomaly / 2.0).tan()).atan() * 2.0;
 
         // https://en.wikipedia.org/wiki/Orbital_mechanics#Ellipse_geometry
-        let semimajor_axis = self.semimajor_axis.expect("Selected orbit mode should have semimajor axis defined");
-        let radius = (semimajor_axis * (1.0 - eccentricity.powi(2)))/(1.0 + eccentricity * true_anomaly.cos());
+        let semimajor_axis = self
+            .semimajor_axis
+            .expect("Selected orbit mode should have semimajor axis defined");
+        let radius = (semimajor_axis * (1.0 - eccentricity.powi(2)))
+            / (1.0 + eccentricity * true_anomaly.cos());
 
         // Polar: (true_anomaly, radius)
+        self.x = radius * true_anomaly.cos();
+        self.y = 0.0;
+        self.z = radius * true_anomaly.sin();
+    }
+
+    pub fn position(&self) -> (f64, f64, f64) {
+        (self.x, self.y, self.z)
     }
 }
 
@@ -83,13 +106,15 @@ impl Orbit {
 /// https://es.wikipedia.org/wiki/Leyes_de_Kepler
 /// 2*PI / T
 fn mean_movement(semimajor_axis: f64, parent: &Parent) -> f64 {
-    ((G*parent.mass)/semimajor_axis.powi(3)).sqrt()
+    ((G * parent.mass) / semimajor_axis.powi(3)).sqrt()
 }
 
 /// https://es.wikipedia.org/wiki/Ecuación_de_Kepler
 /// 0 = E - e*sen(E) - M
 fn kepler_equation_zeroed(mean_anomaly: f64, eccentricity: f64) -> impl Fn(f64) -> f64 {
-    move |eccentric_anomaly| eccentric_anomaly - eccentricity * eccentric_anomaly.sin() - mean_anomaly
+    move |eccentric_anomaly| {
+        eccentric_anomaly - eccentricity * eccentric_anomaly.sin() - mean_anomaly
+    }
 }
 
 fn kepler_equation_zeroed_derivative(eccentricity: f64) -> impl Fn(f64) -> f64 {

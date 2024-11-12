@@ -7,6 +7,7 @@ mod render;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(orbits::OrbitPlugin)
         .add_plugins(render::RenderPlugin)
         .add_plugins((multiplayer::ServerPlugin, multiplayer::ClientPlugin))
         .add_plugins(WorldInspectorPlugin::new())
