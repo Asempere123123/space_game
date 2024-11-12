@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Resource)]
-pub struct TimeSpeed(f64);
+pub struct TimeSpeed(pub f64);
 
 impl TimeSpeed {
     pub fn new() -> Self {

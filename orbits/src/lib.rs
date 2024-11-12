@@ -51,6 +51,7 @@ mod solver;
 mod time;
 
 pub use crate::plugin::OrbitPlugin;
+pub use crate::time::{DeltaTime, TimeSpeed};
 
 /// https://es.wikipedia.org/wiki/Constante_de_gravitación_universal
 const G: f64 = 6.67430e-11;
