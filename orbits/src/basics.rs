@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::{Body, Frame, Orbit, G};
+use crate::{Body, Frame, Orbit};
 
 use std::f64::consts::PI;
 
@@ -24,6 +24,7 @@ impl Orbit {
             vx: Some(vx),
             vy: Some(vy),
             vz: Some(vz),
+            velocity: (vx.powi(2) + vy.powi(2) + vz.powi(2)).sqrt(),
 
             semimajor_axis: None,
             eccentricity: None,
@@ -34,6 +35,7 @@ impl Orbit {
             mean_movement: None,
 
             current_mean_anomaly: 0.0,
+            current_true_anomaly: 0.0,
             frame: Frame::Free,
             epoch: 0.0,
             parent: parent,
@@ -57,6 +59,7 @@ impl Orbit {
             vx: None,
             vy: None,
             vz: None,
+            velocity: 0.0,
 
             semimajor_axis: Some(semimajor_axis),
             eccentricity: Some(eccentricity),
@@ -67,6 +70,7 @@ impl Orbit {
             mean_movement: Some(mean_movement(semimajor_axis, &parent)),
 
             current_mean_anomaly: 0.0,
+            current_true_anomaly: 0.0,
             frame: Frame::Orbit,
             epoch: starting_epoch,
             parent: parent,
@@ -76,15 +80,75 @@ impl Orbit {
         orbit
     }
 
+    pub fn set_free(&mut self) {
+        if self.frame == Frame::Free {
+            return;
+        }
+
+        todo!("This entire function");
+    }
+
     /// Moves the body according to the elapsed time
     pub fn step(&mut self, seconds: f64) {
         match self.frame {
             Frame::Orbit => self.step_orbit(seconds),
-            Frame::Free => todo!("Make this just apply gravity"),
+            Frame::Free => self.step_free(seconds),
         }
     }
 
+    /// https://en.wikipedia.org/wiki/Verlet_integration
+    /// Since this method is reasonably cheap, it can be changed to use a fixed timestep integration if future
+    fn step_free(&mut self, seconds: f64) {
+        let vx = self.vx.as_mut().expect("Selected orbit mode should have vx defined");
+        let vy = self.vy.as_mut().expect("Selected orbit mode should have vy defined");
+        let vz = self.vz.as_mut().expect("Selected orbit mode should have vz defined");
+        let standard_gravitational_parameter = self.parent.read().unwrap().standard_gravitational_parameter;
+
+        let r_squared = self.x.powi(2) + self.y.powi(2) + self.z.powi(2);
+        let gravitational_acceleration = standard_gravitational_parameter / r_squared;
+        
+        let r = r_squared.sqrt();
+
+        let gravitational_acceleration_x = (-self.x / r) * gravitational_acceleration;
+        let gravitational_acceleration_y = (-self.y / r) * gravitational_acceleration;
+        let gravitational_acceleration_z = (-self.z / r) * gravitational_acceleration;
+
+        // Update positions using the current velocities
+        let seconds_squared_halved = seconds.powi(2) / 2.0;
+        self.x += *vx * seconds + gravitational_acceleration_x * seconds_squared_halved;
+        self.y += *vy * seconds + gravitational_acceleration_y * seconds_squared_halved;
+        self.z += *vz * seconds + gravitational_acceleration_z * seconds_squared_halved;
+
+        // Calculate the new gravitational acceleration at the updated position
+        let r_squared_new = self.x.powi(2) + self.y.powi(2) + self.z.powi(2);
+        let gravitational_acceleration_new = standard_gravitational_parameter / r_squared_new;
+
+        let r_new = r_squared_new.sqrt();
+
+        let gravitational_acceleration_x_new = (-self.x / r_new) * gravitational_acceleration_new;
+        let gravitational_acceleration_y_new = (-self.y / r_new) * gravitational_acceleration_new;
+        let gravitational_acceleration_z_new = (-self.z / r_new) * gravitational_acceleration_new;
+
+        // Update velocities based on the average of the old and new accelerations
+        *vx += 0.5 * (gravitational_acceleration_x + gravitational_acceleration_x_new) * seconds;
+        *vy += 0.5 * (gravitational_acceleration_y + gravitational_acceleration_y_new) * seconds;
+        *vz += 0.5 * (gravitational_acceleration_z + gravitational_acceleration_z_new) * seconds;
+        self.velocity = (vx.powi(2) + vy.powi(2) + vz.powi(2)).sqrt()
+    }
+
     fn step_orbit(&mut self, seconds: f64) {
+        let eccentricity = self
+            .eccentricity
+            .expect("Selected orbit mode should have eccentricity defined");
+        match eccentricity {
+            0.0..1.0 => self.step_eliptical_orbit(seconds),
+            1.0 => todo!("Support parabolic orbits"),
+            0.0.. => todo!("Suport hiperbolic orbits"),
+            _ => unreachable!("Negative eccentricity does not make physical sense"),
+        }
+    }
+
+    fn step_eliptical_orbit(&mut self, seconds: f64) {
         // https://es.wikipedia.org/wiki/Anomalía_media
         self.current_mean_anomaly = (self.current_mean_anomaly
             + self
@@ -152,6 +216,9 @@ impl Orbit {
         self.x = position.x;
         self.y = position.y;
         self.z = position.z;
+        // https://en.wikipedia.org/wiki/Vis-viva_equation
+        self.velocity = (self.parent.read().unwrap().standard_gravitational_parameter * (2.0/radius - 1.0/semimajor_axis)).sqrt();
+        self.current_true_anomaly = true_anomaly;
     }
 
     pub fn position(&self) -> (f64, f64, f64) {
@@ -175,7 +242,7 @@ impl Orbit {
 /// https://es.wikipedia.org/wiki/Leyes_de_Kepler
 /// 2*PI / T
 fn mean_movement(semimajor_axis: f64, parent: &Arc<RwLock<Body>>) -> f64 {
-    ((G * parent.read().unwrap().mass) / semimajor_axis.powi(3)).sqrt()
+    (parent.read().unwrap().standard_gravitational_parameter / semimajor_axis.powi(3)).sqrt()
 }
 
 /// https://es.wikipedia.org/wiki/Ecuación_de_Kepler

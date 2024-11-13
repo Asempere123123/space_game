@@ -90,6 +90,21 @@ fn setup(
         ),
     ));
 
+    let heavy_root_planet = Arc::new(RwLock::new(Body::new(1.0e11, None)));
+
+    // Spawn a planet
+    let mesh = meshes.add(Sphere::default());
+    let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(223, 3, 252)));
+    commands.spawn((
+        orbits::Orbit::new_free(6.0, 0.0, 0.0, 0.0, 0.0, 0.4, heavy_root_planet.clone()),
+        PbrBundle {
+            mesh: mesh,
+            material: sphere_material,
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            ..default()
+        },
+    ));
+
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             shadows_enabled: true,

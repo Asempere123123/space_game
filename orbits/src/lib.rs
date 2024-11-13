@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 /// Represents the type of reference frame for the movement.
 /// Determines how the object's movement is interpreted in relation to a reference frame.
-#[derive(Reflect)]
+#[derive(Reflect, PartialEq)]
 pub enum Frame {
     /// Simulates movement dynamicaly.
     Free,
@@ -20,6 +20,7 @@ pub struct Orbit {
     vx: Option<f64>,
     vy: Option<f64>,
     vz: Option<f64>,
+    velocity: f64,
 
     /// https://es.wikipedia.org/wiki/Semieje_mayor
     semimajor_axis: Option<f64>,
@@ -35,6 +36,7 @@ pub struct Orbit {
     mean_movement: Option<f64>,
 
     current_mean_anomaly: f64,
+    current_true_anomaly: f64,
     /// How the object should behave
     frame: Frame,
     /// When did this movement start
@@ -48,7 +50,7 @@ pub struct Orbit {
 /// This object has properties like mass and rotation period that influence the orbit.
 #[derive(Reflect, Default)]
 pub struct Body {
-    mass: f64,
+    standard_gravitational_parameter: f64,
     pub orbit: Option<Orbit>,
 }
 
@@ -58,7 +60,7 @@ pub struct Planet(pub std::sync::Arc<std::sync::RwLock<Body>>);
 
 impl Body {
     pub fn new(mass: f64, orbit: Option<Orbit>) -> Self {
-        Self { mass, orbit }
+        Self { standard_gravitational_parameter: mass * G, orbit }
     }
 }
 
