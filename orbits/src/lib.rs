@@ -23,25 +23,50 @@ pub struct Orbit {
 
     /// https://es.wikipedia.org/wiki/Semieje_mayor
     semimajor_axis: Option<f64>,
+    /// https://es.wikipedia.org/wiki/Excentricidad_orbital
     eccentricity: Option<f64>,
+    /// https://es.wikipedia.org/wiki/Argumento_del_periastro
+    argument_of_periapsis: Option<f64>,
+    /// https://es.wikipedia.org/wiki/Inclinaci%C3%B3n_orbital
+    inclination: Option<f64>,
+    /// https://es.wikipedia.org/wiki/Longitud_del_nodo_ascendente
+    longitude_of_ascending_node: Option<f64>,
 
     mean_movement: Option<f64>,
 
     current_mean_anomaly: f64,
+    /// How the object should behave
     frame: Frame,
-    parent: Parent,
+    /// When did this movement start
+    epoch: f64,
+    #[reflect(ignore)]
+    parent: std::sync::Arc<std::sync::RwLock<Body>>,
 }
 
 /// Represents the central object that an orbiting object revolves around.
+/// Usualy a Star/Planet/Moon
 /// This object has properties like mass and rotation period that influence the orbit.
-#[derive(Reflect)]
-pub struct Parent {
+#[derive(Reflect, Default)]
+pub struct Body {
     mass: f64,
+    pub orbit: Option<Orbit>,
 }
 
-impl Parent {
-    pub fn new(mass: f64) -> Self {
-        Self { mass }
+/// Wrapper component arround a body, it represents any body that does not change
+#[derive(Component)]
+pub struct Planet(pub std::sync::Arc<std::sync::RwLock<Body>>);
+
+impl Body {
+    pub fn new(mass: f64, orbit: Option<Orbit>) -> Self {
+        Self { mass, orbit }
+    }
+}
+
+impl Planet {
+    pub fn new(mass: f64, orbit: Option<Orbit>) -> Self {
+        Self(std::sync::Arc::new(std::sync::RwLock::new(Body::new(
+            mass, orbit,
+        ))))
     }
 }
 
@@ -58,12 +83,15 @@ const G: f64 = 6.67430e-11;
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+    use std::sync::{Arc, RwLock};
+
     use super::*;
 
     #[test]
     fn create_orbit() {
-        let sun = Parent::new(1.9891e30);
-        let mut earth = Orbit::new_orbit(149_598_023e3, 0.017, sun);
+        let sun = Arc::new(RwLock::new(Body::new(1.9891e30, None)));
+        let mut earth = Orbit::new_orbit(149_598_023e3, 0.017, PI / 2.0, 0.0, 0.0, sun, 0.0, 0.0);
 
         assert_eq!(Some(1.9913261148403696e-7), earth.mean_movement);
         // Step about a year
