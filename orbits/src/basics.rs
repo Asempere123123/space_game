@@ -35,7 +35,8 @@ impl Orbit {
             mean_movement: None,
 
             current_mean_anomaly: 0.0,
-            current_true_anomaly: 0.0,
+            current_eccentric_anomaly: 0.0,
+            radius: 0.0,
             frame: Frame::Free,
             epoch: 0.0,
             parent: parent,
@@ -70,7 +71,8 @@ impl Orbit {
             mean_movement: Some(mean_movement(semimajor_axis, &parent)),
 
             current_mean_anomaly: 0.0,
-            current_true_anomaly: 0.0,
+            current_eccentric_anomaly: 0.0,
+            radius: 0.0,
             frame: Frame::Orbit,
             epoch: starting_epoch,
             parent: parent,
@@ -80,12 +82,106 @@ impl Orbit {
         orbit
     }
 
+    /// https://downloads.rene-schwarz.com/download/M001-Keplerian_Orbit_Elements_to_Cartesian_State_Vectors.pdf
     pub fn set_free(&mut self) {
         if self.frame == Frame::Free {
             return;
         }
 
-        todo!("This entire function");
+        let eccentricity = self.eccentricity.expect("Selected orbit mode should have eccentricity defined");
+        let standard_gravitational_parameter = self.parent.read().unwrap().standard_gravitational_parameter;
+        let semimajor_axis = self.semimajor_axis.expect("Selected orbit mode should have semimajor axis defined");
+
+        let constant = (standard_gravitational_parameter*semimajor_axis).sqrt()/self.radius;
+        let vx = -constant * self.current_eccentric_anomaly.sin();
+        let vz = constant * ((1.0 - eccentricity.powi(2)).sqrt() * self.current_eccentric_anomaly.cos());
+
+        let argument_of_periapsis = self.argument_of_periapsis.expect("Selected orbit mode should have argument of periapsis defined");
+        let longitude_of_ascending_node = self.longitude_of_ascending_node.expect("Selected orbit mode should have longitude of ascending node defined");
+        let inclination = -self.inclination.expect("Selected orbit mode should have inclination defined");
+
+        let cos_arg_per = argument_of_periapsis.cos();
+        let sin_arg_per = argument_of_periapsis.sin();
+
+        let cos_long_asc_node = longitude_of_ascending_node.cos();
+        let sin_long_asc_node = longitude_of_ascending_node.sin();
+
+        let sin_inclination = inclination.sin();
+        let cos_inclination = inclination.cos();
+
+        let rotated_vx = vx * (cos_arg_per * cos_long_asc_node - sin_arg_per * cos_inclination * sin_long_asc_node)
+                                - vz * (sin_arg_per * cos_long_asc_node + cos_arg_per * cos_inclination * sin_long_asc_node);
+        let rotated_vy = vx * sin_arg_per * sin_inclination + vz * cos_arg_per * sin_inclination;
+        let rotated_vz = vx * (cos_arg_per * cos_long_asc_node + sin_arg_per * cos_inclination * sin_long_asc_node)
+                                + vz * (cos_arg_per * cos_inclination * cos_long_asc_node - sin_arg_per * sin_long_asc_node);
+    
+        self.vx = Some(rotated_vx);
+        self.vy = Some(rotated_vy);
+        self.vz = Some(rotated_vz);
+        self.frame = Frame::Free;
+    }
+
+    /// https://downloads.rene-schwarz.com/download/M002-Cartesian_State_Vectors_to_Keplerian_Orbit_Elements.pdf
+    pub fn set_orbit(&mut self, current_epoch: f64) {
+        if self.frame == Frame::Orbit {
+            return;
+        }
+        
+        let vx = self.vx.expect("Selected orbit mode should have vx defined");
+        let vy = self.vy.expect("Selected orbit mode should have vy defined");
+        let vz = self.vz.expect("Selected orbit mode should have vz defined");
+        let standard_gravitational_parameter = self.parent.read().unwrap().standard_gravitational_parameter;
+
+        self.epoch = current_epoch;
+
+        let position = nalgebra::Vector3::new(self.x, self.y, self.z);
+        self.radius = position.magnitude();
+        let velocity = nalgebra::Vector3::new(vx, vy, vz);
+        let momentum = position.cross(&velocity);
+
+        let eccentricity_vector = velocity.cross(&momentum) / standard_gravitational_parameter - position / self.radius;
+        let n = nalgebra::Vector3::new(-momentum.y, momentum.x, 0.0);
+        let n_norm = n.magnitude();
+
+        let true_anomaly = if position.dot(&velocity) >= 0.0 {
+            (eccentricity_vector.dot(&position) / (eccentricity_vector.magnitude() * position.magnitude())).acos()
+        } else {
+            2.0*PI - (eccentricity_vector.dot(&position) / (eccentricity_vector.magnitude() * position.magnitude())).acos()
+        };
+
+        // Parametros
+        let inclination = (momentum.z / momentum.magnitude()).acos();
+        self.inclination = Some(-inclination);
+
+        let eccentricity = eccentricity_vector.magnitude();
+        self.eccentricity = Some(eccentricity);
+
+        let eccentricity_const = ((1.0 + eccentricity)/(1.0 - eccentricity)).sqrt();
+        let eccentric_anomaly = 2.0 * ((true_anomaly/2.0).tan()/eccentricity_const).atan();
+        self.current_eccentric_anomaly = eccentric_anomaly;
+
+        let longitude_of_ascending_node = if n.y >= 0.0 {
+            (n.x/n_norm).acos()
+        } else {
+            2.0*PI - (n.x/n_norm).acos()
+        };
+        self.longitude_of_ascending_node = Some(longitude_of_ascending_node);
+
+        let argument_of_periapsis = if eccentricity_vector.z >= 0.0 {
+            (n.dot(&eccentricity_vector)/(eccentricity * n_norm)).acos()
+        } else {
+            2.0*PI - (n.dot(&eccentricity_vector)/(eccentricity * n_norm)).acos()
+        };
+        self.argument_of_periapsis = Some(argument_of_periapsis);
+
+        let mean_anomaly = eccentric_anomaly - eccentricity * eccentric_anomaly.sin();
+        self.current_mean_anomaly = mean_anomaly;
+
+        let semi_major_axis = 1.0 / ((2.0/self.radius)-(self.velocity.powi(2)/standard_gravitational_parameter));
+        self.semimajor_axis = Some(semi_major_axis);
+
+        self.mean_movement = Some(mean_movement(semi_major_axis, &self.parent));
+        self.frame = Frame::Orbit;
     }
 
     /// Moves the body according to the elapsed time
@@ -218,7 +314,8 @@ impl Orbit {
         self.z = position.z;
         // https://en.wikipedia.org/wiki/Vis-viva_equation
         self.velocity = (self.parent.read().unwrap().standard_gravitational_parameter * (2.0/radius - 1.0/semimajor_axis)).sqrt();
-        self.current_true_anomaly = true_anomaly;
+        self.current_eccentric_anomaly = eccentric_anomaly;
+        self.radius = radius;
     }
 
     pub fn position(&self) -> (f64, f64, f64) {

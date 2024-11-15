@@ -43,6 +43,17 @@ fn setup(
     // Spawn a planet
     let mesh = meshes.add(Sphere::default());
     let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(12, 10, 255)));
+    let mut orbit = orbits::Orbit::new_orbit(
+        6.0,
+        0.7,
+        PI / 2.0,
+        PI / 2.0,
+        0.0,
+        root_planet.clone(),
+        0.0,
+        0.0,
+    );
+    //orbit.set_free();
     commands.spawn((
         PbrBundle {
             mesh: mesh,
@@ -50,7 +61,7 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         },
-        orbits::Orbit::new_orbit(6.0, 0.7, PI / 2.0, 0.0, 0.0, root_planet.clone(), 0.0, 0.0),
+        orbit,
     ));
     // Spawn a planet
     let mesh = meshes.add(Sphere::default());
@@ -95,8 +106,12 @@ fn setup(
     // Spawn a planet
     let mesh = meshes.add(Sphere::default());
     let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(223, 3, 252)));
+    let mut orbit =
+        orbits::Orbit::new_free(4.0, 0.0, 0.0, 0.0, 0.4, 0.4, heavy_root_planet.clone());
+    orbit.set_orbit(0.0);
+    orbit.set_free();
     commands.spawn((
-        orbits::Orbit::new_free(6.0, 0.0, 0.0, 0.0, 0.0, 0.4, heavy_root_planet.clone()),
+        orbit,
         PbrBundle {
             mesh: mesh,
             material: sphere_material,

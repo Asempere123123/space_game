@@ -36,7 +36,8 @@ pub struct Orbit {
     mean_movement: Option<f64>,
 
     current_mean_anomaly: f64,
-    current_true_anomaly: f64,
+    current_eccentric_anomaly: f64,
+    radius: f64,
     /// How the object should behave
     frame: Frame,
     /// When did this movement start
