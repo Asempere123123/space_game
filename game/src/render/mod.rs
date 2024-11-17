@@ -3,6 +3,7 @@ use std::f64::consts::PI;
 use std::sync::{Arc, RwLock};
 
 mod orbit_camera;
+mod planet;
 use orbit_camera::OrbitCameraPlugin;
 use orbits::Body;
 
@@ -18,7 +19,10 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(OrbitCameraPlugin)
             .insert_state(RenderState::MapView)
-            .add_systems(Startup, setup)
+            .add_systems(
+                Startup,
+                (setup, planet::test_init, planet::test_update).chain(),
+            )
             .add_systems(Update, (update_planets, update_orbits));
     }
 }

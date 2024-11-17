@@ -61,7 +61,10 @@ pub struct Planet(pub std::sync::Arc<std::sync::RwLock<Body>>);
 
 impl Body {
     pub fn new(mass: f64, orbit: Option<Orbit>) -> Self {
-        Self { standard_gravitational_parameter: mass * G, orbit }
+        Self {
+            standard_gravitational_parameter: mass * G,
+            orbit,
+        }
     }
 }
 
