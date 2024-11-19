@@ -220,7 +220,11 @@ impl VertexRc {
             self.0.extend(vec![0; index as usize - self.0.len() + 1]);
         }
 
-        self.0[index as usize] += 1;
+        // Currently some vertices are leaked, and can get high counts. In this case just do this
+        self.0[index as usize] = match self.0[index as usize].checked_add(1) {
+            Some(result) => result,
+            None => 1,
+        };
     }
 
     /// Decrements count in that index, returns true if the new count is 0.

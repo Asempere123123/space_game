@@ -1,16 +1,21 @@
-use std::{rc::Rc, sync::RwLock};
+use bevy::prelude::*;
 
 use super::mesh::{
     IndicesExt, MidpointIndexCache, UnusedIndices, UnusedVertices, VertexRc, VerticesExt,
 };
 
-const CHUNK_LOD: usize = 5;
+const CHUNK_LOD: usize = 2;
+const MAX_LOD: f32 = 10.0;
+const SUBDIVIDE_RADIUS: f32 = 3.0;
+const UNDIVIDE_RADIUS: f32 = 5.0;
 
+#[derive(Component)]
 pub struct Chunk {
     pub children: Vec<Chunk>,
     is_root: bool,
 
-    position: (f32, f32, f32),
+    position: [f32; 3],
+    lod: f32,
 
     first_level_vertices: [u32; 3],
     second_level_indices: [u32; 3],
@@ -19,8 +24,8 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn new(
-        position: (f32, f32, f32),
         is_root: bool,
+        lod: f32,
 
         first_level_vertices: [u32; 3],
 
@@ -49,9 +54,21 @@ impl Chunk {
             CHUNK_LOD,
         );
 
+        let v1 = mesh_vertices.get_vertex(first_level_vertices[0]);
+        let v2 = mesh_vertices.get_vertex(first_level_vertices[1]);
+        let v3 = mesh_vertices.get_vertex(first_level_vertices[2]);
+
+        // The position will be the middle of the 3 vertices
+        let position = [
+            (v1[0] + v2[0] + v3[0]) / 3.0,
+            (v1[1] + v2[1] + v3[1]) / 3.0,
+            (v1[2] + v2[2] + v3[2]) / 3.0,
+        ];
+
         Self {
             children: Vec::new(),
             is_root,
+            lod,
 
             position,
 
@@ -71,6 +88,9 @@ impl Chunk {
         cache: &mut MidpointIndexCache,
     ) {
         debug_assert!(self.children.is_empty());
+        if self.lod >= MAX_LOD {
+            return;
+        }
 
         for face in &self.faces {
             mesh_indices.remove_face_and_vertices(
@@ -85,8 +105,8 @@ impl Chunk {
 
         self.children.reserve(4);
         self.children.push(Chunk::new(
-            (0.0, 0.0, 0.0),
             false,
+            self.lod + 1.0,
             [
                 self.first_level_vertices[0],
                 self.second_level_indices[0],
@@ -100,8 +120,8 @@ impl Chunk {
             cache,
         ));
         self.children.push(Chunk::new(
-            (0.0, 0.0, 0.0),
             false,
+            self.lod + 1.0,
             [
                 self.second_level_indices[0],
                 self.second_level_indices[1],
@@ -115,8 +135,8 @@ impl Chunk {
             cache,
         ));
         self.children.push(Chunk::new(
-            (0.0, 0.0, 0.0),
             false,
+            self.lod + 1.0,
             [
                 self.second_level_indices[0],
                 self.first_level_vertices[1],
@@ -130,8 +150,8 @@ impl Chunk {
             cache,
         ));
         self.children.push(Chunk::new(
-            (0.0, 0.0, 0.0),
             false,
+            self.lod + 1.0,
             [
                 self.second_level_indices[1],
                 self.first_level_vertices[2],
@@ -276,5 +296,55 @@ impl Chunk {
 
         self.second_level_indices = second_level_indices;
         self.faces = faces;
+    }
+
+    pub fn divide_or_undivide(
+        &mut self,
+        mesh_indices: &mut impl IndicesExt,
+        mesh_vertices: &mut impl VerticesExt,
+        unused_indices: &mut UnusedIndices,
+        unused_vertices: &mut UnusedVertices,
+        vertex_rc: &mut VertexRc,
+        cache: &mut MidpointIndexCache,
+        camera_position: &[f32; 3],
+    ) {
+        // TODO: This can be done depth first instead of recursively
+        for child in &mut self.children {
+            child.divide_or_undivide(
+                mesh_indices,
+                mesh_vertices,
+                unused_indices,
+                unused_vertices,
+                vertex_rc,
+                cache,
+                camera_position,
+            );
+        }
+
+        let distance_squared = (camera_position[0] - self.position[0]).powi(2)
+            + (camera_position[1] - self.position[1]).powi(2)
+            + (camera_position[2] - self.position[2]).powi(2);
+        // To far, undivide
+        if distance_squared > (UNDIVIDE_RADIUS / self.lod).powi(2) && !self.children.is_empty() {
+            self.undivide(
+                mesh_indices,
+                mesh_vertices,
+                unused_indices,
+                unused_vertices,
+                vertex_rc,
+                cache,
+            );
+        } else if distance_squared < (SUBDIVIDE_RADIUS / self.lod).powi(2)
+            && self.children.is_empty()
+        {
+            self.subdivide(
+                mesh_indices,
+                mesh_vertices,
+                unused_indices,
+                unused_vertices,
+                vertex_rc,
+                cache,
+            );
+        }
     }
 }

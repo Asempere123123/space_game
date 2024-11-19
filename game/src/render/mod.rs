@@ -19,11 +19,8 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(OrbitCameraPlugin)
             .insert_state(RenderState::MapView)
-            .add_systems(
-                Startup,
-                (setup, planet::test_init, planet::test_update).chain(),
-            )
-            .add_systems(Update, (update_planets, update_orbits));
+            .add_systems(Startup, (setup, planet::test_init))
+            .add_systems(Update, (update_planets, update_orbits, planet::test_update));
     }
 }
 
@@ -32,22 +29,13 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = meshes.add(Cuboid::default());
-    let cube_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(124, 144, 255)));
-    commands.spawn((PbrBundle {
-        mesh: mesh,
-        material: cube_material,
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    },));
-
     // Root planet
     let root_planet = Arc::new(RwLock::new(Body::new(15.0, None)));
 
     // Spawn a planet
     let mesh = meshes.add(Sphere::default());
     let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(12, 10, 255)));
-    let mut orbit = orbits::Orbit::new_orbit(
+    let orbit = orbits::Orbit::new_orbit(
         6.0,
         0.7,
         PI / 2.0,
