@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use std::f64::consts::PI;
 use std::sync::{Arc, RwLock};
 
 mod orbit_camera;

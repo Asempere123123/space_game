@@ -6,7 +6,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
-const CAMERA_ZOOM_SPEED: f32 = 100000.0;
+const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -76,7 +76,7 @@ fn handle_zoom(
 ) {
     for scroll_event in evr_scroll.read() {
         for mut orbit_distance in query.iter_mut() {
-            orbit_distance.0 += CAMERA_ZOOM_SPEED * -scroll_event.y;
+            orbit_distance.0 += CAMERA_ZOOM_SPEED * orbit_distance.0 * -scroll_event.y;
         }
     }
 }
