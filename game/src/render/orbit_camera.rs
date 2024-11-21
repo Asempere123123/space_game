@@ -4,9 +4,9 @@ use bevy::prelude::*;
 
 use std::f32::consts::{FRAC_PI_2, PI};
 
-const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 7.0;
+const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
-const CAMERA_ZOOM_SPEED: f32 = 1.0 / 8.0;
+const CAMERA_ZOOM_SPEED: f32 = 100000.0;
 
 #[derive(Component)]
 pub struct MainCamera;

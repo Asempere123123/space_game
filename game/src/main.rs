@@ -1,4 +1,4 @@
-use bevy::{pbr::wireframe, prelude::*};
+use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod multiplayer;
@@ -13,6 +13,5 @@ fn main() {
         .add_plugins((multiplayer::ServerPlugin, multiplayer::ClientPlugin))
         .add_plugins(bevy_egui::EguiPlugin)
         .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins(wireframe::WireframePlugin)
         .run();
 }

@@ -5,9 +5,9 @@ use bevy_egui::{
 };
 use orbits::TimeSpeed;
 
-const WARPS_AMMOUNT: usize = 11;
+const WARPS_AMMOUNT: usize = 14;
 const WAPRPS: [f64; WARPS_AMMOUNT] = [
-    1.0, 2.0, 3.0, 4.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7,
+    1.0, 2.0, 3.0, 4.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e11, 1.0e14, 1.0e17,
 ];
 
 pub fn time_ui(

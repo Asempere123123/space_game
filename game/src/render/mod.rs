@@ -17,7 +17,8 @@ enum RenderState {
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(OrbitCameraPlugin)
+        app.add_plugins(MaterialPlugin::<planet::material::PlanetMaterial>::default())
+            .add_plugins(OrbitCameraPlugin)
             .insert_state(RenderState::MapView)
             .add_systems(Startup, (setup, planet::test_init))
             .add_systems(Update, (update_planets, update_orbits, planet::test_update));
@@ -33,19 +34,18 @@ fn setup(
     let root_planet = Arc::new(RwLock::new(Body::new(15.0, None)));
 
     // Spawn a planet
-    let mesh = meshes.add(Sphere::default());
+    let mesh = meshes.add(Sphere::new(1738100.0));
     let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(12, 10, 255)));
     let orbit = orbits::Orbit::new_orbit(
-        6.0,
-        0.7,
-        PI / 2.0,
-        PI / 2.0,
+        384400000.0,
+        0.0549,
+        0.0,
+        0.08979719,
         0.0,
         root_planet.clone(),
         0.0,
         0.0,
     );
-    //orbit.set_free();
     commands.spawn((
         PbrBundle {
             mesh: mesh,
@@ -54,62 +54,6 @@ fn setup(
             ..default()
         },
         orbit,
-    ));
-    // Spawn a planet
-    let mesh = meshes.add(Sphere::default());
-    let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(250, 10, 20)));
-    let orbit = orbits::Orbit::new_orbit(3.0, 0.7, 0.0, 0.0, 0.0, root_planet.clone(), 0.0, 0.0);
-    let planet = orbits::Planet::new(4.0, Some(orbit));
-    let planet_body = planet.0.clone();
-    commands.spawn((
-        PbrBundle {
-            mesh: mesh,
-            material: sphere_material,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        },
-        planet,
-    ));
-
-    // Spawn a moon
-    let mesh = meshes.add(Sphere::default());
-    let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(12, 10, 255)));
-    commands.spawn((
-        PbrBundle {
-            mesh: mesh,
-            material: sphere_material,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        },
-        orbits::Orbit::new_orbit(
-            1.5,
-            0.2,
-            PI / 2.0,
-            0.0,
-            0.0,
-            planet_body.clone(),
-            5000023.0,
-            -100000.0,
-        ),
-    ));
-
-    let heavy_root_planet = Arc::new(RwLock::new(Body::new(1.0e11, None)));
-
-    // Spawn a planet
-    let mesh = meshes.add(Sphere::default());
-    let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(223, 3, 252)));
-    let mut orbit =
-        orbits::Orbit::new_free(4.0, 0.0, 0.0, 0.0, 0.4, 0.4, heavy_root_planet.clone());
-    orbit.set_orbit(0.0);
-    orbit.set_free();
-    commands.spawn((
-        orbit,
-        PbrBundle {
-            mesh: mesh,
-            material: sphere_material,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        },
     ));
 
     commands.spawn(PointLightBundle {

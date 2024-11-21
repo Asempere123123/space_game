@@ -5,7 +5,7 @@ use super::mesh::{
 };
 
 const CHUNK_LOD: usize = 2;
-const MAX_LOD: f32 = 10.0;
+const MAX_LOD: i32 = 20;
 const SUBDIVIDE_RADIUS: f32 = 3.0;
 const UNDIVIDE_RADIUS: f32 = 5.0;
 
@@ -13,9 +13,10 @@ const UNDIVIDE_RADIUS: f32 = 5.0;
 pub struct Chunk {
     pub children: Vec<Chunk>,
     is_root: bool,
+    radius: f32,
 
     position: [f32; 3],
-    lod: f32,
+    lod: i32,
 
     first_level_vertices: [u32; 3],
     second_level_indices: [u32; 3],
@@ -25,7 +26,8 @@ pub struct Chunk {
 impl Chunk {
     pub fn new(
         is_root: bool,
-        lod: f32,
+        lod: i32,
+        radius: f32,
 
         first_level_vertices: [u32; 3],
 
@@ -59,16 +61,24 @@ impl Chunk {
         let v3 = mesh_vertices.get_vertex(first_level_vertices[2]);
 
         // The position will be the middle of the 3 vertices
+        let position_x = (v1[0] + v2[0] + v3[0]) / 3.0;
+        let position_y = (v1[1] + v2[1] + v3[1]) / 3.0;
+        let position_z = (v1[2] + v2[2] + v3[2]) / 3.0;
+
+        // Radius / norm
+        let position_factor =
+            radius / ((position_x.powi(2) + position_y.powi(2) + position_z.powi(2)).sqrt());
         let position = [
-            (v1[0] + v2[0] + v3[0]) / 3.0,
-            (v1[1] + v2[1] + v3[1]) / 3.0,
-            (v1[2] + v2[2] + v3[2]) / 3.0,
+            position_x * position_factor,
+            position_y * position_factor,
+            position_z * position_factor,
         ];
 
         Self {
             children: Vec::new(),
             is_root,
             lod,
+            radius,
 
             position,
 
@@ -106,7 +116,8 @@ impl Chunk {
         self.children.reserve(4);
         self.children.push(Chunk::new(
             false,
-            self.lod + 1.0,
+            self.lod + 1,
+            self.radius,
             [
                 self.first_level_vertices[0],
                 self.second_level_indices[0],
@@ -121,7 +132,8 @@ impl Chunk {
         ));
         self.children.push(Chunk::new(
             false,
-            self.lod + 1.0,
+            self.lod + 1,
+            self.radius,
             [
                 self.second_level_indices[0],
                 self.second_level_indices[1],
@@ -136,7 +148,8 @@ impl Chunk {
         ));
         self.children.push(Chunk::new(
             false,
-            self.lod + 1.0,
+            self.lod + 1,
+            self.radius,
             [
                 self.second_level_indices[0],
                 self.first_level_vertices[1],
@@ -151,7 +164,8 @@ impl Chunk {
         ));
         self.children.push(Chunk::new(
             false,
-            self.lod + 1.0,
+            self.lod + 1,
+            self.radius,
             [
                 self.second_level_indices[1],
                 self.first_level_vertices[2],
@@ -308,43 +322,49 @@ impl Chunk {
         cache: &mut MidpointIndexCache,
         camera_position: &[f32; 3],
     ) {
-        // TODO: This can be done depth first instead of recursively
-        for child in &mut self.children {
-            child.divide_or_undivide(
-                mesh_indices,
-                mesh_vertices,
-                unused_indices,
-                unused_vertices,
-                vertex_rc,
-                cache,
-                camera_position,
-            );
+        let mut stack = vec![self as *mut Chunk];
+        let mut visited = Vec::new();
+
+        while let Some(current_chunk) = stack.pop() {
+            for child in &mut (unsafe { &mut *current_chunk }).children {
+                stack.push(child as *mut Chunk);
+            }
+
+            visited.push(current_chunk);
         }
 
-        let distance_squared = (camera_position[0] - self.position[0]).powi(2)
-            + (camera_position[1] - self.position[1]).powi(2)
-            + (camera_position[2] - self.position[2]).powi(2);
-        // To far, undivide
-        if distance_squared > (UNDIVIDE_RADIUS / self.lod).powi(2) && !self.children.is_empty() {
-            self.undivide(
-                mesh_indices,
-                mesh_vertices,
-                unused_indices,
-                unused_vertices,
-                vertex_rc,
-                cache,
-            );
-        } else if distance_squared < (SUBDIVIDE_RADIUS / self.lod).powi(2)
-            && self.children.is_empty()
-        {
-            self.subdivide(
-                mesh_indices,
-                mesh_vertices,
-                unused_indices,
-                unused_vertices,
-                vertex_rc,
-                cache,
-            );
+        while let Some(chunk) = visited.pop() {
+            let chunk = unsafe { &mut *chunk };
+
+            let distance_squared = (camera_position[0] - chunk.position[0]).powi(2)
+                + (camera_position[1] - chunk.position[1]).powi(2)
+                + (camera_position[2] - chunk.position[2]).powi(2);
+            // To far, undivide
+            if distance_squared
+                > ((UNDIVIDE_RADIUS * self.radius) / 2.0_f32.powi(chunk.lod)).powi(2)
+                && !chunk.children.is_empty()
+            {
+                chunk.undivide(
+                    mesh_indices,
+                    mesh_vertices,
+                    unused_indices,
+                    unused_vertices,
+                    vertex_rc,
+                    cache,
+                );
+            } else if distance_squared
+                < ((SUBDIVIDE_RADIUS * self.radius) / 2.0_f32.powi(chunk.lod)).powi(2)
+                && chunk.children.is_empty()
+            {
+                chunk.subdivide(
+                    mesh_indices,
+                    mesh_vertices,
+                    unused_indices,
+                    unused_vertices,
+                    vertex_rc,
+                    cache,
+                );
+            }
         }
     }
 }

@@ -223,7 +223,7 @@ impl VertexRc {
         // Currently some vertices are leaked, and can get high counts. In this case just do this
         self.0[index as usize] = match self.0[index as usize].checked_add(1) {
             Some(result) => result,
-            None => 1,
+            None => 100,
         };
     }
 
