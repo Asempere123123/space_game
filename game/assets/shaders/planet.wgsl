@@ -21,8 +21,8 @@ fn vertex(
     var normalized_position = normalize(vertex.position);
 
     // Calculate offset
-    var lat = (asin(normalized_position.z) + pi/2.0) / pi;
-    var long = (atan2(normalized_position.y, normalized_position.x) + pi) / (2.0*pi);
+    var lat = (-asin(normalized_position.z) + pi/2.0) / pi;
+    var long = (-atan2(normalized_position.y, normalized_position.x) + pi) / (2.0*pi);
     var offset = (textureGather(0, depth_texture, depth_sampler, vec2<f32>(lat, long)).r - 0.5) * 2;
 
     var position = normalized_position * (radius + offset * deviation);
@@ -33,7 +33,7 @@ fn vertex(
     );
 
     // Just color it by height for now
-    if offset > -0.5 {
+    if offset > 0.0 {
         out.color = vec4<f32>(0.0, 1.0, 0.0, 1.0);   
     } else {
         out.color = vec4<f32>(0.0, 0.0, 1.0, 1.0);
