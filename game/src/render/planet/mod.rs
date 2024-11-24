@@ -91,7 +91,6 @@ pub fn test_init(
                     mesh: meshes.add(mesh),
                     material: materials.add(material::PlanetMaterial {
                         radius,
-                        depth: assets.load("depth.png"),
                         deviation: 8800.0,
                     }),
                     transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),

@@ -5,10 +5,7 @@ use bevy::render::render_resource::{AsBindGroup, ShaderRef};
 pub struct PlanetMaterial {
     #[uniform(0)]
     pub radius: f32,
-    #[texture(1)]
-    #[sampler(2)]
-    pub depth: Handle<Image>,
-    #[uniform(3)]
+    #[uniform(1)]
     pub deviation: f32,
 }
 
