@@ -4,12 +4,11 @@ use bevy::prelude::*;
 
 use std::f32::consts::{FRAC_PI_2, PI};
 
+use super::{CameraMode, MainCamera};
+
 const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
 const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;
-
-#[derive(Component)]
-pub struct MainCamera;
 
 pub struct OrbitCameraPlugin;
 
@@ -21,7 +20,8 @@ impl Plugin for OrbitCameraPlugin {
                 handle_zoom,
                 handle_drag
                     .run_if(input_pressed(MouseButton::Right).or_else(has_orbit_distance_changed)),
-            ),
+            )
+                .run_if(camera_on_orbit_mode),
         );
     }
 }
@@ -42,13 +42,16 @@ fn setup(mut commands: Commands) {
 fn handle_drag(
     mut query: Query<(&mut Transform, &mut OrbitAngle, &OrbitDistance), With<MainCamera>>,
     mut evr_motion: EventReader<MouseMotion>,
+    buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    // Acumular todos los movimientos de camara que han pasado
-    for drag_event in evr_motion.read() {
-        for (_transform, mut orbit_angle, _orbit_distance) in query.iter_mut() {
-            orbit_angle.x -= drag_event.delta.x * CAMERA_ORBIT_SPEED;
+    if buttons.pressed(MouseButton::Right) {
+        // Acumular todos los movimientos de camara que han pasado
+        for drag_event in evr_motion.read() {
+            for (_transform, mut orbit_angle, _orbit_distance) in query.iter_mut() {
+                orbit_angle.x -= drag_event.delta.x * CAMERA_ORBIT_SPEED;
 
-            orbit_angle.y += drag_event.delta.y * CAMERA_ORBIT_SPEED;
+                orbit_angle.y += drag_event.delta.y * CAMERA_ORBIT_SPEED;
+            }
         }
     }
 
@@ -88,6 +91,10 @@ fn has_orbit_distance_changed(
     query: Query<&OrbitDistance, (Changed<OrbitDistance>, With<MainCamera>)>,
 ) -> bool {
     query.iter().count() > 0
+}
+
+fn camera_on_orbit_mode(camera_mode: Res<State<CameraMode>>) -> bool {
+    camera_mode.get() == &CameraMode::Orbit
 }
 
 #[derive(Component, Debug)]

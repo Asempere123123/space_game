@@ -49,9 +49,9 @@ fn fragment(
         return vec4(0.0, 0.0, 1.0, 0.3);  // Deep water
     } else if (vertex_output.offset >= -0.5 && vertex_output.offset < 0.0) {
         return vec4(0.0, 0.0, 1.0, 1.0);  // Water (blue)
-    } else if (vertex_output.offset >= 0.0 && vertex_output.offset < 0.05) {
+    } else if (vertex_output.offset >= 0.0 && vertex_output.offset < 0.0005) {
         return vec4(1.0, 0.9, 0.6, 1.0);  // Sand (light yellowish)
-    } else if (vertex_output.offset >= 0.05 && vertex_output.offset < 0.25) {
+    } else if (vertex_output.offset >= 0.0005 && vertex_output.offset < 0.25) {
         return vec4(0.0, 1.0, 0.0, 1.0);  // Grass (green)
     } else if (vertex_output.offset >= 0.25 && vertex_output.offset < 0.5) {
         return vec4(0.5, 0.5, 0.5, 1.0);  // Mountains (gray)
@@ -101,15 +101,27 @@ fn perlinNoise2(map_position: vec2f, scale: f32) -> f32 {
 
 fn calculate_offset(map_position: vec2<f32>) -> f32 {
     let base_scale = 12.0;
-    let octaves = 5u;
-    let base_weight = 1.0 / (2.0 * (1.0 - 1.0/pow(2.0, f32(octaves))));
+    let octaves = 10u;
+    let base_weight = 1.0;
 
     var noise = perlinNoise2(map_position, base_scale) * base_weight;
 
+    // First pass, continents
     var scale = base_scale * 3.0;
     var weight = base_weight * 0.5;
     for (var i: u32 = 1u; i < octaves; i = i + 1u) {
         noise += perlinNoise2(map_position, scale) * weight;
+
+        scale *= 2.0;
+        weight *= 0.5;
+    }
+
+    // Second pass, mountains...
+    let second_pass_octaves = 2u;
+    scale = base_scale * pow(2.0, 4.0);
+    weight = base_weight * (1.0/2.0);
+    for (var i: u32 = 1u; i < second_pass_octaves; i = i + 1u) {
+        noise += abs(perlinNoise2(map_position, scale) * weight);
 
         scale *= 2.0;
         weight *= 0.5;

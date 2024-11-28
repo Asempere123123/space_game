@@ -5,9 +5,9 @@ use super::mesh::{
 };
 
 const CHUNK_LOD: usize = 2;
-const MAX_LOD: i32 = 20;
-const SUBDIVIDE_RADIUS: f32 = 20.0;
-const UNDIVIDE_RADIUS: f32 = 30.0;
+const MAX_LOD: i32 = 22;
+const SUBDIVIDE_RADIUS: f32 = 25.0;
+const UNDIVIDE_RADIUS: f32 = 40.0;
 
 #[derive(Component)]
 pub struct Chunk {
