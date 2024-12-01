@@ -40,15 +40,11 @@ impl Plugin for RenderPlugin {
 
 fn setup(mut commands: Commands) {
     // Spawn a light that i think doesnt actualy work
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000_000.,
-            range: 10_000_000_000.0,
-            shadow_depth_bias: 0.2,
-            ..default()
-        },
-        transform: Transform::from_xyz(-7.0e8, 7.0e8, -8.0),
+    commands.spawn(PointLight {
+        shadows_enabled: true,
+        intensity: 10_000_000_000.,
+        range: 10_000_000_000.0,
+        shadow_depth_bias: 0.2,
         ..default()
     });
 }

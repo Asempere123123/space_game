@@ -19,7 +19,7 @@ impl Plugin for OrbitCameraPlugin {
             (
                 handle_zoom,
                 handle_drag
-                    .run_if(input_pressed(MouseButton::Right).or_else(has_orbit_distance_changed)),
+                    .run_if(input_pressed(MouseButton::Right).or(has_orbit_distance_changed)),
             )
                 .run_if(camera_on_orbit_mode),
         );
@@ -28,11 +28,9 @@ impl Plugin for OrbitCameraPlugin {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(0., 0., -INITIAL_CAMERA_ORBIT_DISTANCE)
-                .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
-            ..default()
-        },
+        Camera3d::default(),
+        Transform::from_xyz(0., 0., -INITIAL_CAMERA_ORBIT_DISTANCE)
+            .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         OrbitDistance(INITIAL_CAMERA_ORBIT_DISTANCE),
         OrbitAngle { x: PI, y: 0. },
         MainCamera,

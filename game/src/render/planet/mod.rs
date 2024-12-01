@@ -38,7 +38,6 @@ mod mesh;
 
 #[derive(Bundle)]
 pub struct PlanetViewBundle {
-    mmb: MaterialMeshBundle<material::PlanetMaterial>,
     chunk: Chunk,
     midpoint_cache: mesh::MidpointIndexCache,
     unused_indices: mesh::UnusedIndices,
@@ -117,12 +116,7 @@ pub fn on_planet_unload(
             .expect("Planet must have the planet component");
 
         let mesh = Mesh3d::from(meshes.add(Sphere::new(planet_config.radius)));
-        let low_res_view = commands
-            .spawn(PbrBundle {
-                mesh: mesh,
-                ..default()
-            })
-            .id();
+        let low_res_view = commands.spawn(mesh).id();
 
         commands
             .get_entity(planet)
@@ -175,22 +169,21 @@ pub fn on_planet_load(
             .with_inserted_indices(Indices::U32(indices));
 
             let chunk = commands
-                .spawn(PlanetViewBundle {
-                    mmb: MaterialMeshBundle {
-                        mesh: Mesh3d::from(meshes.add(mesh)),
-                        material: MeshMaterial3d::from(materials.add(material::PlanetMaterial {
-                            radius: planet.radius,
-                            deviation: 8800.0,
-                        })),
-                        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-                        ..default()
+                .spawn((
+                    PlanetViewBundle {
+                        chunk,
+                        midpoint_cache,
+                        unused_indices,
+                        unused_vertices,
+                        vertex_rc,
                     },
-                    chunk,
-                    midpoint_cache,
-                    unused_indices,
-                    unused_vertices,
-                    vertex_rc,
-                })
+                    Mesh3d::from(meshes.add(mesh)),
+                    MeshMaterial3d::from(materials.add(material::PlanetMaterial {
+                        radius: planet.radius,
+                        deviation: 8800.0,
+                    })),
+                    Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                ))
                 .id();
             chunks.push(chunk);
         }
