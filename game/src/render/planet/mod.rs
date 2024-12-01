@@ -56,7 +56,7 @@ pub struct CurrentPlanet;
 
 pub fn update_chunks(
     mut query: Query<(
-        &Handle<Mesh>,
+        &Mesh3d,
         &mut Chunk,
         &mut MidpointIndexCache,
         &mut UnusedIndices,
@@ -116,7 +116,7 @@ pub fn on_planet_unload(
             .get(planet)
             .expect("Planet must have the planet component");
 
-        let mesh = meshes.add(Sphere::new(planet_config.radius));
+        let mesh = Mesh3d::from(meshes.add(Sphere::new(planet_config.radius)));
         let low_res_view = commands
             .spawn(PbrBundle {
                 mesh: mesh,
@@ -177,11 +177,11 @@ pub fn on_planet_load(
             let chunk = commands
                 .spawn(PlanetViewBundle {
                     mmb: MaterialMeshBundle {
-                        mesh: meshes.add(mesh),
-                        material: materials.add(material::PlanetMaterial {
+                        mesh: Mesh3d::from(meshes.add(mesh)),
+                        material: MeshMaterial3d::from(materials.add(material::PlanetMaterial {
                             radius: planet.radius,
                             deviation: 8800.0,
-                        }),
+                        })),
                         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                         ..default()
                     },

@@ -64,10 +64,9 @@ fn setup_planets(
     // Kevin (El Cubo)
     let mesh = meshes.add(Cuboid::new(100.0, 100.0, 100.0));
     let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(128, 0, 128)));
-    commands.spawn(PbrBundle {
-        mesh: mesh,
-        material: sphere_material,
-        transform: Transform::from_xyz(0.0, 0.0, -6378000.0),
-        ..default()
-    });
+    commands.spawn((
+        Mesh3d::from(mesh),
+        MeshMaterial3d::from(sphere_material),
+        Transform::from_xyz(0.0, 0.0, -6378000.0),
+    ));
 }
