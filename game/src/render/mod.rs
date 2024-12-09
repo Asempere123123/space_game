@@ -19,11 +19,26 @@ enum CameraMode {
     Free,
 }
 
+#[derive(Resource, Default)]
+pub struct CameraPosition {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+}
+
+impl CameraPosition {
+    pub fn add(&mut self, b: Vec3) {
+        self.x += b.x as f64;
+        self.y += b.y as f64;
+        self.z += b.z as f64;
+    }
+}
+
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<planet::material::PlanetMaterial>::default())
-            .add_plugins(FreeCameraPlugin)
-            .add_plugins(OrbitCameraPlugin)
+            .insert_resource(CameraPosition::default())
+            .add_plugins((FreeCameraPlugin, OrbitCameraPlugin))
             .insert_state(CameraMode::Orbit)
             .add_systems(Startup, setup)
             .add_systems(

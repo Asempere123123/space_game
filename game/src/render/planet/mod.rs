@@ -6,7 +6,7 @@ use bevy::{
 use chunk::Chunk;
 use mesh::{MidpointIndexCache, UnusedIndices, UnusedVertices, VertexRc};
 
-use super::MainCamera;
+use super::CameraPosition;
 
 const PHI: f32 = 1.618033988749894848204586834365638118_f32;
 const ICOSAHEDRON_VERTEX_POSITIONS: [([f32; 3], [f32; 3], [f32; 3]); 20] = [
@@ -63,7 +63,7 @@ pub fn update_chunks(
         &mut UnusedVertices,
         &mut VertexRc,
     )>,
-    cammera_query: Query<&Transform, With<MainCamera>>,
+    cammera_position: Res<CameraPosition>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (
@@ -86,10 +86,12 @@ pub fn update_chunks(
             panic!("Chunk does not have faces")
         };
 
-        let chunk = chunk.as_mut();
-        let cammera_position = cammera_query.single().translation;
         // Habra que pasarlo a coordenadas relativas respecto al centro del planeta
-        let camera_position = [cammera_position.x, cammera_position.y, cammera_position.z];
+        let camera_position = [
+            cammera_position.x as f32,
+            cammera_position.y as f32,
+            cammera_position.z as f32,
+        ];
 
         chunk.divide_or_undivide(
             &mut indices,
