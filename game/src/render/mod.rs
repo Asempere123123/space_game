@@ -1,6 +1,8 @@
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use free_camera::FreeCameraPlugin;
+
+pub use orbit_camera::{CameraCenter, CameraUp, OrbitDistance};
 pub use planet::{CurrentPlanet, Planet};
 
 mod free_camera;

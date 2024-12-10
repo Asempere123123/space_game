@@ -10,6 +10,7 @@ bevy_egui = { workspace = true }
 bincode = { workspace = true }
 crossbeam-channel = { workspace = true }
 egui_extras = { workspace = true }
+nalgebra = { workspace = true }
 orbits = { path = "../orbits"}
 serde = { workspace = true }
 tokio = { workspace = true }

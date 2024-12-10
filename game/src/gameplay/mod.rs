@@ -1,17 +1,22 @@
 use bevy::prelude::*;
 
 mod planet;
+use orbits::Orbit;
 use planet::{
     create_active_planet, create_unactive_planet, update_orbit_positions, update_planet_positions,
 };
+use ship::{CurrentShip, ShipPlugin};
 
 use crate::render::Planet;
+
+mod ship;
 
 pub struct GamePlayPlugin;
 
 impl Plugin for GamePlayPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_planets)
+        app.add_plugins(ShipPlugin)
+            .add_systems(Startup, setup_planets)
             .add_systems(Update, (update_planet_positions, update_orbit_positions));
     }
 }
@@ -61,13 +66,17 @@ fn setup_planets(
     };
     let _mars = create_unactive_planet(&mut commands, 6.4171e23, Some(mars_orbit), mars_view);
 
-    // Kevin (El Cubo)
-    let mesh = meshes.add(Cuboid::new(100.0, 100.0, 100.0));
-    let sphere_material = materials.add(StandardMaterial::from_color(Color::srgb_u8(128, 0, 128)));
-    commands.spawn(PbrBundle {
-        mesh: mesh,
-        material: sphere_material,
-        transform: Transform::from_xyz(0.0, 0.0, -6378000.0),
-        ..default()
-    });
+    // Añadir la nave, en teoria no hay que hacerlo aqui pero es dnd tengo acceso a la tierra
+    let mesh = meshes.add(Cuboid::new(10.0, 10.0, 20.0));
+    let material = materials.add(StandardMaterial::from_color(Color::srgb_u8(128, 0, 128)));
+    let orbit = Orbit::new_free(0., 0., -6379000., 0.0, 0.0, -10.0, earth.clone());
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material,
+            ..default()
+        },
+        CurrentShip,
+        orbit,
+    ));
 }

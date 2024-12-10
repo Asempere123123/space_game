@@ -1,28 +1,26 @@
-use bevy::input::common_conditions::input_pressed;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
+use nalgebra::{Rotation3, Unit, Vector3};
 
 use std::f32::consts::{FRAC_PI_2, PI};
 
 use super::{CameraMode, CameraPosition, MainCamera};
 
-const INITIAL_CAMERA_ORBIT_DISTANCE: f64 = 10000000.0;
+const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
-const CAMERA_ZOOM_SPEED: f64 = 1.0 / 100.0;
+const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;
 
 pub struct OrbitCameraPlugin;
 
 impl Plugin for OrbitCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup).add_systems(
-            PreUpdate,
-            (
-                handle_zoom,
-                handle_drag
-                    .run_if(input_pressed(MouseButton::Right).or_else(has_orbit_distance_changed)),
-            )
-                .run_if(camera_on_orbit_mode),
-        );
+        app.insert_resource(CameraCenter::default())
+            .insert_resource(CameraUp(Vec3::Y))
+            .add_systems(Startup, setup)
+            .add_systems(
+                PreUpdate,
+                (handle_zoom, handle_drag).run_if(camera_on_orbit_mode),
+            );
     }
 }
 
@@ -42,6 +40,8 @@ fn handle_drag(
     mut query: Query<(&mut Transform, &mut OrbitAngle, &OrbitDistance), With<MainCamera>>,
     mut evr_motion: EventReader<MouseMotion>,
     mut camera_position: ResMut<CameraPosition>,
+    camera_center: Res<CameraCenter>,
+    camera_up: Res<CameraUp>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
     if buttons.pressed(MouseButton::Right) {
@@ -59,19 +59,37 @@ fn handle_drag(
     for (mut transform, mut orbit_angle, orbit_distance) in query.iter_mut() {
         orbit_angle.y = orbit_angle.y.clamp(-FRAC_PI_2 + 0.1, FRAC_PI_2 - 0.1);
 
-        camera_position.x = orbit_distance.0 * (orbit_angle.y.cos() * orbit_angle.x.sin()) as f64;
-        camera_position.y = orbit_distance.0 * orbit_angle.y.sin() as f64;
-        camera_position.z = orbit_distance.0 * (orbit_angle.y.cos() * orbit_angle.x.cos()) as f64;
+        let mut camera_relative_position = Vector3::new(
+            orbit_distance.0 * orbit_angle.y.cos() * orbit_angle.x.sin(),
+            orbit_distance.0 * orbit_angle.y.sin(),
+            orbit_distance.0 * orbit_angle.y.cos() * orbit_angle.x.cos(),
+        );
 
-        // Now broken, needs to be done manualy since camera is always at origin
+        // Rotate so that camera_up is up instead of Y
+        let rotation_axis =
+            Vector3::y().cross(&Vector3::new(camera_up.0.x, camera_up.0.y, camera_up.0.z));
+        if rotation_axis.norm_squared() != 0. {
+            let rotation_axis = Unit::new_unchecked(rotation_axis.normalize());
+
+            let cos_theta = Vec3::Y.dot(camera_up.0);
+            let angle = cos_theta.acos();
+            let rotation = Rotation3::from_axis_angle(&rotation_axis, angle);
+
+            camera_relative_position = rotation * camera_relative_position;
+        }
+
+        camera_position.x = (camera_center.0.x + camera_relative_position.x) as f64;
+        camera_position.y = (camera_center.0.y + camera_relative_position.y) as f64;
+        camera_position.z = (camera_center.0.z + camera_relative_position.z) as f64;
+
         transform.look_to(
-            Vec3::ZERO
+            camera_center.0
                 - Vec3::new(
                     camera_position.x as f32,
                     camera_position.y as f32,
                     camera_position.z as f32,
                 ),
-            Vec3::Y,
+            camera_up.0,
         );
     }
 }
@@ -82,19 +100,13 @@ fn handle_zoom(
 ) {
     for scroll_event in evr_scroll.read() {
         for mut orbit_distance in query.iter_mut() {
-            orbit_distance.0 += CAMERA_ZOOM_SPEED * orbit_distance.0 * (-scroll_event.y as f64);
+            orbit_distance.0 += CAMERA_ZOOM_SPEED * orbit_distance.0 * -scroll_event.y;
         }
     }
 }
 
 #[derive(Component)]
-struct OrbitDistance(f64);
-
-fn has_orbit_distance_changed(
-    query: Query<&OrbitDistance, (Changed<OrbitDistance>, With<MainCamera>)>,
-) -> bool {
-    query.iter().next().is_some()
-}
+pub struct OrbitDistance(pub f32);
 
 fn camera_on_orbit_mode(camera_mode: Res<State<CameraMode>>) -> bool {
     camera_mode.get() == &CameraMode::Orbit
@@ -105,3 +117,9 @@ struct OrbitAngle {
     x: f32,
     y: f32,
 }
+
+#[derive(Resource, Debug, Default)]
+pub struct CameraCenter(pub Vec3);
+
+#[derive(Resource, Debug, Default)]
+pub struct CameraUp(pub Vec3);
