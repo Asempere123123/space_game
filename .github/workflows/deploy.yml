@@ -36,20 +36,29 @@ jobs:
       - name: Setup | Install | trunk
         run: |
           cargo binstall -y trunk
+
+      - name: Setup | Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Setup | Rust | wasm
+        run: rustup target add wasm32-unknown-unknown
           
-      - name: Setup Pages
+      - name: Setup | Pages
         uses: actions/configure-pages@v5
         
-      - name: Build the site with Trunk
+      - name: Build | Trunk
         working-directory: ./game
         run: trunk build
 
-      - name: Move build output to root
+      - name: Build | mv
         run: |
           rm -rf ./dist
           cp -r ./game/dist ./dist
       
-      - name: Upload artifact
+      - name: Build | Upload
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
