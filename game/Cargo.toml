@@ -6,16 +6,19 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 bevy-inspector-egui = "0.27.0"
-bevy_egui = { workspace = true }
+bevy_egui = { workspace = true}
 bincode = { workspace = true }
 crossbeam-channel = { workspace = true }
 egui_extras = { workspace = true }
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
 nalgebra = { workspace = true }
 orbits = { path = "../orbits"}
 serde = { workspace = true }
-tokio = { workspace = true }
+uuid = { version = "1.17.0", features = ["rng-getrandom"] }
+tokio = { workspace = true, optional = true}
 
 [features]
 server = []
 client = []
+online = ["client", "server", "tokio"]
 default = ["server", "client"]

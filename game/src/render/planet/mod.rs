@@ -6,6 +6,8 @@ use bevy::{
 use chunk::Chunk;
 use mesh::{MidpointIndexCache, UnusedIndices, UnusedVertices, VertexRc};
 
+use crate::render::planet::material::PlanetUniforms;
+
 use super::CameraPosition;
 
 const PHI: f32 = 1.618033988749894848204586834365638118_f32;
@@ -181,8 +183,7 @@ pub fn on_planet_load(
                     mmb: MaterialMeshBundle {
                         mesh: meshes.add(mesh),
                         material: materials.add(material::PlanetMaterial {
-                            radius: planet.radius,
-                            deviation: 8800.0,
+                            data: PlanetUniforms::new(planet.radius, 8800.0),
                         }),
                         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                         ..default()

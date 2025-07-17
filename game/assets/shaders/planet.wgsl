@@ -1,7 +1,14 @@
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 
-@group(2) @binding(0) var<uniform> radius: f32;
-@group(2) @binding(1) var<uniform> deviation: f32;
+struct PlanetUniforms {
+    radius: f32,
+    deviation: f32,
+    _padding: vec2<f32>,
+};
+
+@group(2) @binding(0)
+var<uniform> planet: PlanetUniforms;
+
 
 const pi = radians(180.0);
 
@@ -26,7 +33,7 @@ fn vertex(
     var offset = calculate_offset(map_position);
     out.offset = offset;
 
-    var position = normalized_position * (radius + offset * deviation);
+    var position = normalized_position * (planet.radius + offset * planet.deviation);
 
     out.position = mesh_position_local_to_clip(
         get_world_from_local(vertex.instance_index),
