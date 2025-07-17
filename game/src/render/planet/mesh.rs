@@ -131,6 +131,8 @@ pub trait IndicesExt {
 pub struct MidpointIndexCache {
     map: HashMap<(u32, u32), u32>,
     keys: HashMap<u32, Vec<((u32, u32), (u32, u32))>>,
+    // Stack used to avoid recursion on the remove method (crashes on web). It is stored here to avoid realocations
+    stack: Vec<u32>,
 }
 
 impl MidpointIndexCache {
@@ -160,13 +162,17 @@ impl MidpointIndexCache {
     }
 
     fn remove(&mut self, index: u32) {
-        if let Some(values) = self.keys.remove(&index) {
-            for value in values {
-                let key = value.0;
-                self.map.remove(&key);
+        self.stack.push(index);
 
-                self.remove(value.1 .0);
-                self.remove(value.1 .1);
+        while let Some(index) = self.stack.pop() {
+            if let Some(values) = self.keys.remove(&index) {
+                for value in values {
+                    let key = value.0;
+                    self.map.remove(&key);
+
+                    self.stack.push(value.1 .0);
+                    self.stack.push(value.1 .1);
+                }
             }
         }
     }

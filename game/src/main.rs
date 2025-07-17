@@ -9,10 +9,24 @@ mod ui;
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(AssetPlugin {
-        meta_check: AssetMetaCheck::Never,
-        ..default()
-    }))
+    app.add_plugins(
+        DefaultPlugins
+            .set(AssetPlugin {
+                meta_check: AssetMetaCheck::Never,
+                ..default()
+            })
+            .set(if cfg!(target_arch = "wasm32") {
+                WindowPlugin {
+                    primary_window: Some(Window {
+                        mode: bevy::window::WindowMode::BorderlessFullscreen,
+                        ..default()
+                    }),
+                    ..default()
+                }
+            } else {
+                default()
+            }),
+    )
     .add_plugins(orbits::OrbitPlugin)
     .add_plugins((render::RenderPlugin, ui::UiPlugin))
     .add_plugins(gameplay::GamePlayPlugin)

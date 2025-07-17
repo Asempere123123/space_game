@@ -51,7 +51,7 @@ jobs:
         
       - name: Build | Trunk
         working-directory: ./game
-        run: trunk build
+        run: trunk build --release
 
       - name: Build | mv
         run: |

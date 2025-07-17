@@ -19,14 +19,26 @@ pub fn time_ui(
     egui::Area::new(egui::Id::new("time"))
         .fixed_pos((10.0, 5.0))
         .show(ctx, |ui| {
+            #[cfg(not(target_arch = "wasm32"))]
             egui::Image::new("file://assets/ui/time_background.png")
+                .paint_at(ui, ui.max_rect().expand2(Vec2::new(10.0, 5.0)));
+            #[cfg(target_arch = "wasm32")]
+            egui::Image::new("https://space-game.asempere.net/assets/ui/time_background.png")
                 .paint_at(ui, ui.max_rect().expand2(Vec2::new(10.0, 5.0)));
             ui.horizontal(|ui| {
                 for (i, warp) in WAPRPS.iter().enumerate() {
                     let img_path = if *enabled == i {
-                        "file://assets/ui/timewarp_arrow_on.png"
+                        if cfg!(target_arch = "wasm32") {
+                            "https://space-game.asempere.net/assets/ui/timewarp_arrow_on.png"
+                        } else {
+                            "file://assets/ui/timewarp_arrow_on.png"
+                        }
                     } else {
-                        "file://assets/ui/timewarp_arrow_off.png"
+                        if cfg!(target_arch = "wasm32") {
+                            "https://space-game.asempere.net/assets/ui/timewarp_arrow_off.png"
+                        } else {
+                            "file://assets/ui/timewarp_arrow_off.png"
+                        }
                     };
                     let img = egui::Image::new(img_path).max_size(Vec2::new(20.0, 20.0));
                     let button = egui::ImageButton::new(img).frame(false);

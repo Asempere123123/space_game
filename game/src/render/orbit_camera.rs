@@ -8,10 +8,9 @@ use super::{CameraMode, CameraPosition, MainCamera};
 
 const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
-// Fast trick, online is only active on desktop
-#[cfg(feature = "online")]
+#[cfg(not(target_arch = "wasm32"))]
 const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;
-#[cfg(not(feature = "online"))]
+#[cfg(target_arch = "wasm32")]
 const CAMERA_ZOOM_SPEED: f32 = 1.0 / 400.0;
 
 pub struct OrbitCameraPlugin;
