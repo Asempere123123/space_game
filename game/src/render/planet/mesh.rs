@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use std::collections::VecDeque;
 
 pub trait VerticesExt {
     fn add_vertex(&mut self, unused_vertices: &mut UnusedVertices, position: [f32; 3]) -> u32;
@@ -132,7 +133,8 @@ pub struct MidpointIndexCache {
     map: HashMap<(u32, u32), u32>,
     keys: HashMap<u32, Vec<((u32, u32), (u32, u32))>>,
     // Stack used to avoid recursion on the remove method (crashes on web). It is stored here to avoid realocations
-    stack: Vec<u32>,
+    // Changed it to a VecDeque so that i can start iteration from the front, limiting its max size
+    stack: VecDeque<u32>,
 }
 
 impl MidpointIndexCache {
@@ -162,16 +164,16 @@ impl MidpointIndexCache {
     }
 
     fn remove(&mut self, index: u32) {
-        self.stack.push(index);
+        self.stack.push_back(index);
 
-        while let Some(index) = self.stack.pop() {
+        while let Some(index) = self.stack.pop_front() {
             if let Some(values) = self.keys.remove(&index) {
                 for value in values {
                     let key = value.0;
                     self.map.remove(&key);
 
-                    self.stack.push(value.1 .0);
-                    self.stack.push(value.1 .1);
+                    self.stack.push_back(value.1 .0);
+                    self.stack.push_back(value.1 .1);
                 }
             }
         }

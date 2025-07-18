@@ -5,9 +5,15 @@ use super::mesh::{
 };
 
 const CHUNK_LOD: usize = 2;
+#[cfg(not(target_arch = "wasm32"))]
 const MAX_LOD: i32 = 22;
+#[cfg(target_arch = "wasm32")]
+const MAX_LOD: i32 = 16;
 const SUBDIVIDE_RADIUS: f32 = 25.0;
+#[cfg(not(target_arch = "wasm32"))]
 const UNDIVIDE_RADIUS: f32 = 40.0;
+#[cfg(target_arch = "wasm32")]
+const UNDIVIDE_RADIUS: f32 = 30.0;
 
 #[derive(Component)]
 pub struct Chunk {
