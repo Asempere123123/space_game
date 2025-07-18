@@ -26,7 +26,10 @@ fn update_ship_camera_orbit(
     mut camera_center: ResMut<CameraCenter>,
     mut camera_up: ResMut<CameraUp>,
 ) {
-    let ship_transform = query.single().position();
+    let ship_transform = query
+        .single()
+        .expect("Could not get single ship")
+        .position();
     camera_center.0.x = ship_transform.0 as f32;
     camera_center.0.y = ship_transform.1 as f32;
     camera_center.0.z = ship_transform.2 as f32;
@@ -49,13 +52,13 @@ fn togle_camera_mode(
     match state.get() {
         CameraMode::Map => {
             // TODO: Make this dependant on planet size and also cache the old positions
-            orbit_distance.single_mut().0 = 50.;
+            orbit_distance.single_mut().unwrap().0 = 50.;
 
             next_state.set(CameraMode::Close);
         }
         CameraMode::Close => {
             // TODO: Make this dependant on planet size and also cache the old positions
-            orbit_distance.single_mut().0 = 10000000.;
+            orbit_distance.single_mut().unwrap().0 = 10000000.;
             camera_center.0 = Vec3::ZERO;
             camera_up.0 = Vec3::Y;
 

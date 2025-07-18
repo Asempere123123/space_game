@@ -13,6 +13,6 @@ impl Plugin for UiPlugin {
 }
 
 fn init(mut egui_context: EguiContexts) {
-    let ctx = egui_context.ctx_mut();
+    let ctx = egui_context.ctx_mut().expect("Could not get egui context");
     egui_extras::install_image_loaders(ctx);
 }

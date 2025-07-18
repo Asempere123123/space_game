@@ -28,5 +28,5 @@ pub fn update_delta_time(
     time_speed: Res<TimeSpeed>,
     time: Res<Time>,
 ) {
-    deltatime.0 = time.delta_seconds_f64() * time_speed.0;
+    deltatime.0 = time.delta_secs_f64() * time_speed.0;
 }

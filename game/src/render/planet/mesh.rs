@@ -1,6 +1,7 @@
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use std::collections::VecDeque;
+
+type HashMap<K, V> = dashmap::DashMap<K, V>;
 
 pub trait VerticesExt {
     fn add_vertex(&mut self, unused_vertices: &mut UnusedVertices, position: [f32; 3]) -> u32;
@@ -67,7 +68,7 @@ pub trait IndicesExt {
         i2: u32,
     ) -> u32 {
         if let Some(index) = cache.get(i1, i2) {
-            return *index;
+            return index;
         }
 
         let p1 = vertices.get_vertex(i1);
@@ -157,10 +158,10 @@ impl MidpointIndexCache {
             .push((key, (i1, i2)));
     }
 
-    fn get(&mut self, i1: u32, i2: u32) -> Option<&u32> {
+    fn get(&mut self, i1: u32, i2: u32) -> Option<u32> {
         let key = if i1 < i2 { (i1, i2) } else { (i2, i1) };
 
-        self.map.get(&key)
+        self.map.get(&key).map(|val| *val.value())
     }
 
     fn remove(&mut self, index: u32) {
@@ -168,12 +169,12 @@ impl MidpointIndexCache {
 
         while let Some(index) = self.stack.pop_front() {
             if let Some(values) = self.keys.remove(&index) {
-                for value in values {
+                for value in values.1 {
                     let key = value.0;
                     self.map.remove(&key);
 
-                    self.stack.push_back(value.1 .0);
-                    self.stack.push_back(value.1 .1);
+                    self.stack.push_back(value.1.0);
+                    self.stack.push_back(value.1.1);
                 }
             }
         }

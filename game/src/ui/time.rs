@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{self, Vec2},
     EguiContexts,
+    egui::{self, Vec2},
 };
 use orbits::TimeSpeed;
 
@@ -15,7 +15,7 @@ pub fn time_ui(
     mut time_speed: ResMut<TimeSpeed>,
     mut enabled: Local<usize>,
 ) {
-    let ctx = egui_context.ctx_mut();
+    let ctx = egui_context.ctx_mut().expect("Could not get egui context");
     egui::Area::new(egui::Id::new("time"))
         .fixed_pos((10.0, 5.0))
         .show(ctx, |ui| {

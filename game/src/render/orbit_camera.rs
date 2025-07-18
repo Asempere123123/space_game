@@ -19,7 +19,10 @@ impl Plugin for OrbitCameraPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CameraCenter::default())
             .insert_resource(CameraUp(Vec3::Y))
-            .add_systems(Startup, setup)
+            .add_systems(
+                PreStartup,
+                setup.before(bevy_egui::EguiStartupSet::InitContexts),
+            )
             .add_systems(
                 PreUpdate,
                 (handle_zoom, handle_drag).run_if(camera_on_orbit_mode),
@@ -29,10 +32,8 @@ impl Plugin for OrbitCameraPlugin {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(0., 0., 0.).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
-            ..default()
-        },
+        Camera3d::default(),
+        Transform::from_xyz(0., 0., 0.).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         OrbitDistance(INITIAL_CAMERA_ORBIT_DISTANCE),
         OrbitAngle { x: PI, y: 0. },
         MainCamera,

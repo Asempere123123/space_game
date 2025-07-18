@@ -25,7 +25,9 @@ fn update_camera(
     mut evr_motion: EventReader<MouseMotion>,
     mut camera_position: ResMut<CameraPosition>,
 ) {
-    let mut camera = query.single_mut();
+    let mut camera = query
+        .single_mut()
+        .expect("Coulnd not get single camera instance");
     let camera_forward = camera.forward();
     let camera_right = camera.right();
 

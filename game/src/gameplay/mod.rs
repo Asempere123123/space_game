@@ -70,13 +70,5 @@ fn setup_planets(
     let mesh = meshes.add(Cuboid::new(10.0, 10.0, 20.0));
     let material = materials.add(StandardMaterial::from_color(Color::srgb_u8(128, 0, 128)));
     let orbit = Orbit::new_free(0., 0., -6379000., 0.0, 0.0, -10.0, earth.clone());
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material,
-            ..default()
-        },
-        CurrentShip,
-        orbit,
-    ));
+    commands.spawn((Mesh3d(mesh), MeshMaterial3d(material), CurrentShip, orbit));
 }

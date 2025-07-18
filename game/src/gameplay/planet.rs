@@ -57,7 +57,7 @@ pub fn update_planet_positions(
 ) {
     let current_planet = current_planet_query.single();
     let (current_planet_x, current_planet_y, current_planet_z) =
-        match &current_planet.0.read().unwrap().orbit {
+        match &current_planet.unwrap().0.read().unwrap().orbit {
             Some(orbit) => orbit.absolute_position(),
             None => (0.0, 0.0, 0.0),
         };
@@ -88,7 +88,7 @@ pub fn update_orbit_positions(
 ) {
     let current_planet = current_planet_query.single();
     let (current_planet_x, current_planet_y, current_planet_z) =
-        match &current_planet.0.read().unwrap().orbit {
+        match &current_planet.unwrap().0.read().unwrap().orbit {
             Some(orbit) => orbit.absolute_position(),
             None => (0.0, 0.0, 0.0),
         };

@@ -1,7 +1,7 @@
 // Messages are a u32 + Bincoded Content
 
 use bevy::{log, prelude::*, utils::HashMap};
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use std::net::SocketAddr;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -10,7 +10,7 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::multiplayer::{ServerReceiver, ServerSender, MAX_MSG_LENGTH};
+use crate::multiplayer::{MAX_MSG_LENGTH, ServerReceiver, ServerSender};
 
 use super::super::{ClientServerMessage, ServerClientMessage};
 

@@ -1,7 +1,7 @@
 // Messages are a u32 + Bincoded Content
 
 use bevy::{log, prelude::*};
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpStream, ToSocketAddrs},
@@ -9,7 +9,7 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::multiplayer::{ClientServerMessage, ServerClientMessage, MAX_MSG_LENGTH};
+use crate::multiplayer::{ClientServerMessage, MAX_MSG_LENGTH, ServerClientMessage};
 
 #[derive(Resource)]
 pub struct TcpClient {

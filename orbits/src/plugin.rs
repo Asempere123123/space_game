@@ -1,6 +1,6 @@
 use crate::{
-    time::{DeltaTime, TimeSpeed},
     Orbit, Planet,
+    time::{DeltaTime, TimeSpeed},
 };
 use bevy::prelude::*;
 

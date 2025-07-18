@@ -18,7 +18,9 @@ fn main() {
             .set(if cfg!(target_arch = "wasm32") {
                 WindowPlugin {
                     primary_window: Some(Window {
-                        mode: bevy::window::WindowMode::BorderlessFullscreen,
+                        mode: bevy::window::WindowMode::BorderlessFullscreen(
+                            MonitorSelection::Current,
+                        ),
                         ..default()
                     }),
                     ..default()
@@ -28,10 +30,10 @@ fn main() {
             }),
     )
     .add_plugins(orbits::OrbitPlugin)
-    .add_plugins((render::RenderPlugin, ui::UiPlugin))
     .add_plugins(gameplay::GamePlayPlugin)
-    .add_plugins(bevy_egui::EguiPlugin)
-    .add_plugins(WorldInspectorPlugin::new());
+    .add_plugins(bevy_egui::EguiPlugin::default())
+    .add_plugins(WorldInspectorPlugin::new())
+    .add_plugins((render::RenderPlugin, ui::UiPlugin));
 
     #[cfg(feature = "online")]
     app.add_plugins((multiplayer::ServerPlugin, multiplayer::ClientPlugin));

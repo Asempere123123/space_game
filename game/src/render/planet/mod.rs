@@ -40,7 +40,6 @@ mod mesh;
 
 #[derive(Bundle)]
 pub struct PlanetViewBundle {
-    mmb: MaterialMeshBundle<material::PlanetMaterial>,
     chunk: Chunk,
     midpoint_cache: mesh::MidpointIndexCache,
     unused_indices: mesh::UnusedIndices,
@@ -58,7 +57,7 @@ pub struct CurrentPlanet;
 
 pub fn update_chunks(
     mut query: Query<(
-        &Handle<Mesh>,
+        &Mesh3d,
         &mut Chunk,
         &mut MidpointIndexCache,
         &mut UnusedIndices,
@@ -121,17 +120,12 @@ pub fn on_planet_unload(
             .expect("Planet must have the planet component");
 
         let mesh = meshes.add(Sphere::new(planet_config.radius));
-        let low_res_view = commands
-            .spawn(PbrBundle {
-                mesh: mesh,
-                ..default()
-            })
-            .id();
+        let low_res_view = commands.spawn(Mesh3d(mesh)).id();
 
         commands
             .get_entity(planet)
             .unwrap()
-            .despawn_descendants()
+            .despawn_related::<Children>()
             .add_child(low_res_view);
     }
 }
@@ -179,27 +173,26 @@ pub fn on_planet_load(
             .with_inserted_indices(Indices::U32(indices));
 
             let chunk = commands
-                .spawn(PlanetViewBundle {
-                    mmb: MaterialMeshBundle {
-                        mesh: meshes.add(mesh),
-                        material: materials.add(material::PlanetMaterial {
-                            data: PlanetUniforms::new(planet.radius, 8800.0),
-                        }),
-                        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-                        ..default()
+                .spawn((
+                    Mesh3d(meshes.add(mesh)),
+                    MeshMaterial3d(materials.add(material::PlanetMaterial {
+                        data: PlanetUniforms::new(planet.radius, 8800.0),
+                    })),
+                    Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                    PlanetViewBundle {
+                        chunk,
+                        midpoint_cache,
+                        unused_indices,
+                        unused_vertices,
+                        vertex_rc,
                     },
-                    chunk,
-                    midpoint_cache,
-                    unused_indices,
-                    unused_vertices,
-                    vertex_rc,
-                })
+                ))
                 .id();
             chunks.push(chunk);
         }
 
         let mut entity = commands.get_entity(entity).unwrap();
-        entity.despawn_descendants();
+        entity.despawn_related::<Children>();
         for chunk in chunks {
             entity.add_child(chunk);
         }
