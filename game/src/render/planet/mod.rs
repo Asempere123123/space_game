@@ -1,5 +1,4 @@
 use bevy::{
-    color::palettes::css::RED,
     prelude::*,
     render::{mesh::Indices, render_asset::RenderAssetUsages},
 };
@@ -51,6 +50,37 @@ pub struct PlanetViewBundle {
 #[derive(Component)]
 pub struct Planet {
     pub radius: f32,
+    pub color: Srgba,
+    pub deep_water_color: LinearRgba,
+    pub water_color: LinearRgba,
+    pub sand_color: LinearRgba,
+    pub grass_color: LinearRgba,
+    pub mountains_color: LinearRgba,
+    pub snow_color: LinearRgba,
+}
+
+impl Planet {
+    pub fn from_radious_and_color(radius: f32, color: Srgba) -> Self {
+        fn scale_color(base: Srgba, factor: f32) -> LinearRgba {
+            LinearRgba::new(
+                (base.red * factor).clamp(0.0, 1.0),
+                (base.green * factor).clamp(0.0, 1.0),
+                (base.blue * factor).clamp(0.0, 1.0),
+                base.alpha,
+            )
+        }
+
+        Self {
+            radius: radius,
+            color: color,
+            deep_water_color: scale_color(color, 0.1),
+            water_color: scale_color(color, 0.2),
+            sand_color: scale_color(color, 0.4),
+            grass_color: scale_color(color, 0.6),
+            mountains_color: scale_color(color, 0.8),
+            snow_color: scale_color(color, 1.0),
+        }
+    }
 }
 
 #[derive(Component)]
@@ -126,7 +156,7 @@ pub fn on_planet_unload(
             .spawn((
                 Mesh3d(mesh),
                 MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: RED.into(),
+                    base_color: planet_config.color.into(),
                     unlit: true,
                     ..default()
                 })),
@@ -188,6 +218,12 @@ pub fn on_planet_load(
                     Mesh3d(meshes.add(mesh)),
                     MeshMaterial3d(materials.add(material::PlanetMaterial {
                         data: PlanetUniforms::new(planet.radius, 8800.0),
+                        deep_water_color: planet.deep_water_color,
+                        water_color: planet.water_color,
+                        sand_color: planet.sand_color,
+                        grass_color: planet.grass_color,
+                        mountain_color: planet.mountains_color,
+                        snow_color: planet.snow_color,
                     })),
                     Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                     PlanetViewBundle {

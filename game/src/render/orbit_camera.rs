@@ -6,7 +6,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use super::{CameraMode, CameraPosition, MainCamera};
 
-const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 10000000.0;
+const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 100000000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
 #[cfg(not(target_arch = "wasm32"))]
 const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;

@@ -1,14 +1,14 @@
 mod time;
 
 use bevy::prelude::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, init)
-            .add_systems(Update, time::time_ui);
+            .add_systems(EguiPrimaryContextPass, time::time_ui);
     }
 }
 

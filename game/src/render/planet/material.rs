@@ -5,6 +5,18 @@ use bevy::render::render_resource::{AsBindGroup, ShaderRef, ShaderType};
 pub struct PlanetMaterial {
     #[uniform(0)]
     pub data: PlanetUniforms,
+    #[uniform(1)]
+    pub deep_water_color: LinearRgba,
+    #[uniform(2)]
+    pub water_color: LinearRgba,
+    #[uniform(3)]
+    pub sand_color: LinearRgba,
+    #[uniform(4)]
+    pub grass_color: LinearRgba,
+    #[uniform(5)]
+    pub mountain_color: LinearRgba,
+    #[uniform(6)]
+    pub snow_color: LinearRgba,
 }
 
 #[derive(Clone, Copy, ShaderType, Debug)]

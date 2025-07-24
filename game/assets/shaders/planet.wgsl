@@ -6,8 +6,13 @@ struct PlanetUniforms {
     _padding: vec2<f32>,
 };
 
-@group(2) @binding(0)
-var<uniform> planet: PlanetUniforms;
+@group(2) @binding(0) var<uniform> planet: PlanetUniforms;
+@group(2) @binding(1) var<uniform> deep_water_color: vec4<f32>;
+@group(2) @binding(2) var<uniform> water_color: vec4<f32>;
+@group(2) @binding(3) var<uniform> sand_color: vec4<f32>;
+@group(2) @binding(4) var<uniform> grass_color: vec4<f32>;
+@group(2) @binding(5) var<uniform> mountain_color: vec4<f32>;
+@group(2) @binding(6) var<uniform> snow_color: vec4<f32>;
 
 const pi = radians(180.0);
 
@@ -52,17 +57,17 @@ fn fragment(
     vertex_output: VertexOutput
 ) -> @location(0) vec4<f32> {
     if (vertex_output.offset < -0.5) {
-        return vec4(0.0, 0.0, 0.55, 1.0);  // Deep water
+        return vec4(deep_water_color);  // Deep water
     } else if (vertex_output.offset >= -0.5 && vertex_output.offset < 0.0) {
-        return vec4(0.0, 0.0, 1.0, 1.0);  // Water (blue)
+        return vec4(water_color);  // Water (blue)
     } else if (vertex_output.offset >= 0.0 && vertex_output.offset < 0.0005) {
-        return vec4(1.0, 0.9, 0.6, 1.0);  // Sand (light yellowish)
+        return vec4(sand_color);  // Sand (light yellowish)
     } else if (vertex_output.offset >= 0.0005 && vertex_output.offset < 0.25) {
-        return vec4(0.0, 1.0, 0.0, 1.0);  // Grass (green)
+        return vec4(grass_color);  // Grass (green)
     } else if (vertex_output.offset >= 0.25 && vertex_output.offset < 0.5) {
-        return vec4(0.5, 0.5, 0.5, 1.0);  // Mountains (gray)
+        return vec4(mountain_color);  // Mountains (gray)
     } else {
-        return vec4(1.0, 1.0, 1.0, 1.0);  // Snow
+        return vec4(snow_color);  // Snow
     }
 }
 
