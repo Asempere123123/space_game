@@ -9,7 +9,6 @@ struct PlanetUniforms {
 @group(2) @binding(0)
 var<uniform> planet: PlanetUniforms;
 
-
 const pi = radians(180.0);
 
 struct Vertex {
@@ -53,7 +52,7 @@ fn fragment(
     vertex_output: VertexOutput
 ) -> @location(0) vec4<f32> {
     if (vertex_output.offset < -0.5) {
-        return vec4(0.0, 0.0, 1.0, 0.3);  // Deep water
+        return vec4(0.0, 0.0, 0.55, 1.0);  // Deep water
     } else if (vertex_output.offset >= -0.5 && vertex_output.offset < 0.0) {
         return vec4(0.0, 0.0, 1.0, 1.0);  // Water (blue)
     } else if (vertex_output.offset >= 0.0 && vertex_output.offset < 0.0005) {

@@ -1,4 +1,5 @@
 use bevy::{
+    color::palettes::css::RED,
     prelude::*,
     render::{mesh::Indices, render_asset::RenderAssetUsages},
 };
@@ -113,6 +114,7 @@ pub fn on_planet_unload(
     mut planet_to_unload: RemovedComponents<CurrentPlanet>,
     planets: Query<&Planet>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for planet in planet_to_unload.read() {
         let planet_config = planets
@@ -120,7 +122,16 @@ pub fn on_planet_unload(
             .expect("Planet must have the planet component");
 
         let mesh = meshes.add(Sphere::new(planet_config.radius));
-        let low_res_view = commands.spawn(Mesh3d(mesh)).id();
+        let low_res_view = commands
+            .spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: RED.into(),
+                    unlit: true,
+                    ..default()
+                })),
+            ))
+            .id();
 
         commands
             .get_entity(planet)

@@ -42,7 +42,6 @@ impl Plugin for RenderPlugin {
             .insert_resource(CameraPosition::default())
             .add_plugins((FreeCameraPlugin, OrbitCameraPlugin))
             .insert_state(CameraMode::Orbit)
-            .add_systems(Startup, setup)
             .add_systems(
                 Update,
                 (
@@ -53,20 +52,6 @@ impl Plugin for RenderPlugin {
                 ),
             );
     }
-}
-
-fn setup(mut commands: Commands) {
-    // Spawn a light that i think doesnt actualy work
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000_000.,
-            range: 10_000_000_000.0,
-            shadow_depth_bias: 0.2,
-            ..default()
-        },
-        Transform::from_xyz(-7.0e8, 7.0e8, -8.0),
-    ));
 }
 
 fn toggle_camera_mode(
