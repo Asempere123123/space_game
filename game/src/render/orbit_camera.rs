@@ -1,12 +1,17 @@
+use bevy::input::common_conditions::input_just_pressed;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 use nalgebra::{Rotation3, Unit, Vector3};
 
 use std::f32::consts::{FRAC_PI_2, PI};
 
+use crate::gameplay::{Earth, Sun};
+use crate::render::CurrentPlanet;
+
 use super::{CameraMode, CameraPosition, MainCamera};
 
-const INITIAL_CAMERA_ORBIT_DISTANCE: f32 = 100000000000.0;
+const SUN_CAMERA_ORBIT_DISTANCE: f32 = 500000000000.0;
+const EARTH_CAMERA_ORBIT_DISTANCE: f32 = 15000000.0;
 const CAMERA_ORBIT_SPEED: f32 = 1.0 / 32.0;
 #[cfg(not(target_arch = "wasm32"))]
 const CAMERA_ZOOM_SPEED: f32 = 1.0 / 100.0;
@@ -19,6 +24,7 @@ impl Plugin for OrbitCameraPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CameraCenter::default())
             .insert_resource(CameraUp(Vec3::Y))
+            .insert_state(WhatOrbit::Sun)
             .add_systems(
                 PreStartup,
                 setup.before(bevy_egui::EguiStartupSet::InitContexts),
@@ -26,7 +32,13 @@ impl Plugin for OrbitCameraPlugin {
             .add_systems(
                 PreUpdate,
                 (handle_zoom, handle_drag).run_if(camera_on_orbit_mode),
-            );
+            )
+            .add_systems(
+                Update,
+                toggle_what_orbit.run_if(input_just_pressed(KeyCode::KeyI)),
+            )
+            .add_systems(OnEnter(WhatOrbit::Earth), change_to_earth)
+            .add_systems(OnEnter(WhatOrbit::Sun), change_to_sun);
     }
 }
 
@@ -34,7 +46,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0., 0., 0.).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
-        OrbitDistance(INITIAL_CAMERA_ORBIT_DISTANCE),
+        OrbitDistance(SUN_CAMERA_ORBIT_DISTANCE),
         OrbitAngle { x: PI, y: 0. },
         MainCamera,
     ));
@@ -127,3 +139,63 @@ pub struct CameraCenter(pub Vec3);
 
 #[derive(Resource, Debug, Default)]
 pub struct CameraUp(pub Vec3);
+
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash)]
+enum WhatOrbit {
+    Sun,
+    Earth,
+}
+
+fn toggle_what_orbit(state: Res<State<WhatOrbit>>, mut next_state: ResMut<NextState<WhatOrbit>>) {
+    match **state {
+        WhatOrbit::Earth => next_state.set(WhatOrbit::Sun),
+        WhatOrbit::Sun => next_state.set(WhatOrbit::Earth),
+    }
+}
+
+fn change_to_earth(
+    mut commands: Commands,
+    earth_query: Query<Entity, With<Earth>>,
+    sun_query: Query<Entity, With<Sun>>,
+    mut orbit_radious_query: Query<(&mut OrbitDistance, &mut OrbitAngle), With<MainCamera>>,
+) -> Result {
+    let Ok(earth) = earth_query.single() else {
+        return Ok(());
+    };
+    let Ok(sun) = sun_query.single() else {
+        return Ok(());
+    };
+    commands.entity(earth).insert(CurrentPlanet);
+    commands.entity(sun).remove::<CurrentPlanet>();
+
+    let (mut orbit_distance, mut orbit_angle) = orbit_radious_query.single_mut()?;
+    orbit_distance.0 = EARTH_CAMERA_ORBIT_DISTANCE;
+    *orbit_angle = OrbitAngle { x: PI, y: 0. };
+
+    Ok(())
+}
+
+fn change_to_sun(
+    mut commands: Commands,
+    earth_query: Query<Entity, With<Earth>>,
+    sun_query: Query<Entity, With<Sun>>,
+    mut orbit_radious_query: Query<(&mut OrbitDistance, &mut OrbitAngle), With<MainCamera>>,
+) -> Result {
+    let Ok(earth) = earth_query.single() else {
+        return Ok(());
+    };
+    let Ok(sun) = sun_query.single() else {
+        return Ok(());
+    };
+    commands.entity(earth).remove::<CurrentPlanet>();
+    commands.entity(sun).insert(CurrentPlanet);
+
+    let (mut orbit_distance, mut orbit_angle) = orbit_radious_query.single_mut()?;
+    orbit_distance.0 = SUN_CAMERA_ORBIT_DISTANCE;
+    *orbit_angle = OrbitAngle {
+        x: PI,
+        y: FRAC_PI_2,
+    };
+
+    Ok(())
+}

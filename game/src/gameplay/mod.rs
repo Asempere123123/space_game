@@ -11,6 +11,11 @@ use crate::render::Planet;
 
 mod ship;
 
+#[derive(Component)]
+pub struct Earth;
+#[derive(Component)]
+pub struct Sun;
+
 pub struct GamePlayPlugin;
 
 impl Plugin for GamePlayPlugin {
@@ -29,12 +34,27 @@ fn setup_planets(
 ) {
     // Root planet (Sun)
     let sun_view = Planet::from_radious_and_color(6378000000.0, YELLOW);
-    let sun = create_active_planet(&mut commands, 1.989e30, None, sun_view);
+    let sun = create_active_planet(&mut commands, 1.989e30, None, sun_view, Some(Sun));
 
     let earth_orbit =
         orbits::Orbit::new_orbit(149.598e9, 0.0167, 0.0, 0.0, 0.0, sun.clone(), 0.0, 0.0);
-    let earth_view = Planet::from_radious_and_color(6378000.0, BLUE);
-    let earth = create_unactive_planet(&mut commands, 5.97219e24, Some(earth_orbit), earth_view);
+    let earth_view = Planet {
+        radius: 6378000.0,
+        color: BLUE,
+        deep_water_color: LinearRgba::new(0.0, 0.0, 0.55, 1.0),
+        water_color: LinearRgba::new(0.0, 0.0, 1.0, 1.0),
+        sand_color: LinearRgba::new(1.0, 0.9, 0.6, 1.0),
+        grass_color: LinearRgba::new(0.0, 1.0, 0.0, 1.0),
+        mountains_color: LinearRgba::new(0.5, 0.5, 0.5, 1.0),
+        snow_color: LinearRgba::new(1.0, 1.0, 1.0, 1.0),
+    };
+    let earth = create_unactive_planet(
+        &mut commands,
+        5.97219e24,
+        Some(earth_orbit),
+        earth_view,
+        Some(Earth),
+    );
 
     let moon_orbit = orbits::Orbit::new_orbit(
         384400000.0,
@@ -56,7 +76,13 @@ fn setup_planets(
         mountains_color: LinearRgba::new(0.5, 0.5, 0.5, 1.0),
         snow_color: LinearRgba::new(1.0, 1.0, 1.0, 1.0),
     };
-    let _moon = create_unactive_planet(&mut commands, 7.34767309e22, Some(moon_orbit), moon_view);
+    let _moon = create_unactive_planet(
+        &mut commands,
+        7.34767309e22,
+        Some(moon_orbit),
+        moon_view,
+        None::<()>,
+    );
 
     let mars_orbit = orbits::Orbit::new_orbit(
         227.956e9,
@@ -69,7 +95,13 @@ fn setup_planets(
         0.0,
     );
     let mars_view = Planet::from_radious_and_color(6378000000.0, RED);
-    let _mars = create_unactive_planet(&mut commands, 6.4171e23, Some(mars_orbit), mars_view);
+    let _mars = create_unactive_planet(
+        &mut commands,
+        6.4171e23,
+        Some(mars_orbit),
+        mars_view,
+        None::<()>,
+    );
 
     // Añadir la nave, en teoria no hay que hacerlo aqui pero es dnd tengo acceso a la tierra
     let mesh = meshes.add(Cuboid::new(10.0, 10.0, 20.0));

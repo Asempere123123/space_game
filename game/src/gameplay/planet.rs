@@ -9,11 +9,12 @@ pub fn create_active_planet(
     mass: f64,
     orbit: Option<orbits::Orbit>,
     planet: Planet,
+    bundle: Option<impl Bundle>,
 ) -> Arc<RwLock<Body>> {
     let orbit = PlanetOrbit::new(mass, orbit);
     let planet_orbit_ref = orbit.0.clone();
 
-    commands.spawn((
+    let mut entity_commands = commands.spawn((
         planet,
         // Will spawn at origin for one frame before position gets updated. It can be computed here from the orbit struct
         GlobalTransform::from_xyz(0.0, 0.0, 0.0),
@@ -23,6 +24,10 @@ pub fn create_active_planet(
         orbit,
     ));
 
+    if let Some(bundle) = bundle {
+        entity_commands.insert(bundle);
+    }
+
     planet_orbit_ref
 }
 
@@ -31,21 +36,25 @@ pub fn create_unactive_planet(
     mass: f64,
     orbit: Option<orbits::Orbit>,
     planet: Planet,
+    bundle: Option<impl Bundle>,
 ) -> Arc<RwLock<Body>> {
     let orbit = PlanetOrbit::new(mass, orbit);
     let planet_orbit_ref = orbit.0.clone();
 
-    commands
-        .spawn((
-            planet,
-            // Will spawn at origin for one frame before position gets updated. It can be computed here from the orbit struct
-            GlobalTransform::from_xyz(0.0, 0.0, 0.0),
-            Transform::from_xyz(0.0, 0.0, 0.0),
-            InheritedVisibility::VISIBLE,
-            orbit,
-            CurrentPlanet,
-        ))
-        .remove::<CurrentPlanet>();
+    let mut entity_commands = commands.spawn((
+        planet,
+        // Will spawn at origin for one frame before position gets updated. It can be computed here from the orbit struct
+        GlobalTransform::from_xyz(0.0, 0.0, 0.0),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        InheritedVisibility::VISIBLE,
+        orbit,
+        CurrentPlanet,
+    ));
+    entity_commands.remove::<CurrentPlanet>();
+
+    if let Some(bundle) = bundle {
+        entity_commands.insert(bundle);
+    }
 
     planet_orbit_ref
 }
