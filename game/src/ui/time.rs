@@ -10,11 +10,18 @@ const WAPRPS: [f64; WARPS_AMMOUNT] = [
     1.0, 2.0, 3.0, 4.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e11, 1.0e14, 1.0e17,
 ];
 
+const DEFAULT_WARP_IDX: usize = 9;
+
 pub fn time_ui(
     mut egui_context: EguiContexts,
     mut time_speed: ResMut<TimeSpeed>,
-    mut enabled: Local<usize>,
+    mut enabled: Local<Option<usize>>,
 ) {
+    let enabled = enabled.get_or_insert_with(|| {
+        time_speed.0 = WAPRPS[DEFAULT_WARP_IDX];
+        DEFAULT_WARP_IDX
+    });
+
     let ctx = egui_context.ctx_mut().expect("Could not get egui context");
     egui::Area::new(egui::Id::new("time"))
         .fixed_pos((10.0, 5.0))

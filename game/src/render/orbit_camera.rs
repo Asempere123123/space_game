@@ -47,7 +47,10 @@ fn setup(mut commands: Commands) {
         Camera3d::default(),
         Transform::from_xyz(0., 0., 0.).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         OrbitDistance(SUN_CAMERA_ORBIT_DISTANCE),
-        OrbitAngle { x: PI, y: 0. },
+        OrbitAngle {
+            x: PI,
+            y: FRAC_PI_2,
+        },
         MainCamera,
     ));
 }

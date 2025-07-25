@@ -1,4 +1,9 @@
-use bevy::{color::palettes::css::*, prelude::*};
+use std::f64::consts::FRAC_PI_2;
+
+use bevy::{
+    color::palettes::{css::*, tailwind::*},
+    prelude::*,
+};
 
 mod planet;
 use orbits::Orbit;
@@ -7,7 +12,7 @@ use planet::{
 };
 use ship::{CurrentShip, ShipPlugin};
 
-use crate::render::Planet;
+use crate::{gameplay::planet::create_unactive_invisible_planet, render::Planet};
 
 mod ship;
 
@@ -36,6 +41,7 @@ fn setup_planets(
     let sun_view = Planet::from_radious_and_color(6378000000.0, YELLOW);
     let sun = create_active_planet(&mut commands, 1.989e30, None, sun_view, Some(Sun));
 
+    // Earth
     let earth_orbit =
         orbits::Orbit::new_orbit(149.598e9, 0.0167, 0.0, 0.0, 0.0, sun.clone(), 0.0, 0.0);
     let earth_view = Planet {
@@ -84,6 +90,7 @@ fn setup_planets(
         None::<()>,
     );
 
+    // Mars
     let mars_orbit = orbits::Orbit::new_orbit(
         227.956e9,
         0.0935,
@@ -95,11 +102,117 @@ fn setup_planets(
         0.0,
     );
     let mars_view = Planet::from_radious_and_color(6378000000.0, RED);
-    let _mars = create_unactive_planet(
+    let mars = create_unactive_planet(
         &mut commands,
-        6.4171e23,
+        6.4171e30,
         Some(mars_orbit),
         mars_view,
+        None::<()>,
+    );
+
+    let phobos_orbit = orbits::Orbit::new_orbit(
+        38440000000.0,
+        0.0151,
+        3.7755,
+        0.01885,
+        2.9533,
+        mars.clone(),
+        0.0,
+        0.0,
+    );
+    let phobos_view = Planet::from_radious_and_color(2378000000.0, GRAY);
+    let _phobos = create_unactive_planet(
+        &mut commands,
+        1.08e16,
+        Some(phobos_orbit),
+        phobos_view,
+        None::<()>,
+    );
+
+    let deimos_orbit = orbits::Orbit::new_orbit(
+        23463000000.0,
+        0.00033,
+        1.35624,
+        0.0,
+        2.9533,
+        mars.clone(),
+        0.0,
+        0.0,
+    );
+    let deimos_view = Planet::from_radious_and_color(1878000000.0, YELLOW_600);
+    let _deimos = create_unactive_planet(
+        &mut commands,
+        1.5e15,
+        Some(deimos_orbit),
+        deimos_view,
+        None::<()>,
+    );
+
+    // Intruder
+    let intruder_orbit =
+        orbits::Orbit::new_orbit(200.0e9, 0.6, FRAC_PI_2, 1.4, 0.0, sun.clone(), 0.0, 0.0);
+    let intruder_view = Planet::from_radious_and_color(6378000000.0, SKY_700);
+    let _intruder = create_unactive_planet(
+        &mut commands,
+        6.4171e30,
+        Some(intruder_orbit),
+        intruder_view,
+        None::<()>,
+    );
+
+    // Twins (Ash and Ember)
+    let twin_origin_orbit = orbits::Orbit::new_orbit(
+        1.082041e11,
+        0.0068,
+        0.963247214,
+        0.0591666616,
+        FRAC_PI_2 - 1.33831847,
+        sun.clone(),
+        0.0,
+        0.0,
+    );
+    let twin_origin = create_unactive_invisible_planet(
+        &mut commands,
+        6.4171e30,
+        Some(twin_origin_orbit),
+        None::<()>,
+    );
+
+    let ash_orbit = orbits::Orbit::new_orbit(
+        38440000000.0 / 2.,
+        0.0151,
+        3.7755,
+        0.01885,
+        2.9533,
+        twin_origin.clone(),
+        0.0,
+        0.0,
+    );
+    let ash_view = Planet::from_radious_and_color(2378000000.0, AMBER_200);
+    let _ash_twin = create_unactive_planet(
+        &mut commands,
+        1.08e16,
+        Some(ash_orbit),
+        ash_view,
+        None::<()>,
+    );
+
+    let ember_orbit = orbits::Orbit::new_orbit(
+        38440000000.0 / 2.,
+        0.0151,
+        6.91709265359,
+        0.01885,
+        2.9533,
+        twin_origin.clone(),
+        0.0,
+        0.0,
+    );
+    let ember_view = Planet::from_radious_and_color(2378000000.0, ORANGE_700);
+    let _ember_twin = create_unactive_planet(
+        &mut commands,
+        1.08e16,
+        Some(ember_orbit),
+        ember_view,
         None::<()>,
     );
 

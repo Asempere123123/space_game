@@ -147,9 +147,9 @@ pub fn on_planet_unload(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for planet in planet_to_unload.read() {
-        let planet_config = planets
-            .get(planet)
-            .expect("Planet must have the planet component");
+        let Ok(planet_config) = planets.get(planet) else {
+            return;
+        };
 
         let mesh = meshes.add(Sphere::new(planet_config.radius));
         let low_res_view = commands
